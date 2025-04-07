@@ -83,7 +83,7 @@ class htp_vector_store:
             records.append({
                 "file_path":file_path,
                 "lineage": lineage,
-                "depth": 4,
+                "depth": 3,
                 "content": content
             })
             for step in rule.get("steps", []):
@@ -92,13 +92,12 @@ class htp_vector_store:
                     "step": step['name'],
                 }
                 content = (
-                    f"Rule - Name: {rule['name']} , Question: {rule['question']}| "
                     f"Step - Name: {step['name']} , Expert Instructions:{step['expert_instructions']} | "
                 )
                 records.append({
                     "file_path":file_path,
                     "lineage": lineage,
-                    "depth": 3,
+                    "depth": 2,
                     "content": content
                 })
                 for htp in step.get("htps", []):
@@ -109,15 +108,13 @@ class htp_vector_store:
 
                     }
                     content = (
-                        f"Rule - Name: {rule['name']} , Question: {rule['question']}| "
-                        f"Step - Name: {step['name']} , Expert Instructions:{step['expert_instructions']} | "
                         f"HTP - Name: {htp['name']} , Expert Instructions:{htp['expert_instructions']} | "
 
                     )
                     records.append({
                         "file_path":file_path,
                         "lineage": lineage,
-                        "depth": 2,
+                        "depth": 1,
                         "content": content
                     })
                     for task in htp.get("tasks", []):
@@ -130,9 +127,6 @@ class htp_vector_store:
                                 "subtask":subtask['subtask_id']
                             }
                             content = (
-                                f"Rule - Name: {rule['name']} , Question: {rule['question']}| "
-                                f"Step - Name: {step['name']} , Expert Instructions:{step['expert_instructions']} | "
-                                f"HTP - Name: {htp['name']} , Expert Instructions:{htp['expert_instructions']} | "
                                 f"Task - Name: {task['task_name']} | "
                                 f"Subtask: {subtask['description']}"
                             )
@@ -201,6 +195,34 @@ class htp_vector_store:
             "content": hit.entity.get('content')
         } for hit in results[0]]
     
+    def get_best_context_by_level(self, query: str, top_k: int = 3):
+        level_scores = {}
+        level_results = {}
+        depth_priority = {
+            "rule": 3,
+            "step": 2,
+            "htp": 1,
+            "subtask": 0,
+        }
+
+        for level, depth in depth_priority.items():
+            results = self.hybrid_search(query=query, top_k=top_k, depth=depth)
+
+            if results:
+                avg_score = sum(item["score"] for item in results) / len(results)
+                level_scores[level] = avg_score
+                level_results[level] = results
+
+        if not level_scores:
+            print("❌ No results found at any level.")
+            return []
+
+        best_level = max(level_scores, key=level_scores.get)
+        print(level_scores)
+        print(f"✅ Best level: {best_level.upper()} | Score: {level_scores[best_level]:.3f}")
+        return level_results[best_level]
+
+    
     # Add new htps
     def add_htps(self,new_dir,old_dir):
         for filename in os.listdir(new_dir):
@@ -221,22 +243,20 @@ class htp_vector_store:
 
 
 """# Main Execution Flow
-htpvs=htp_vector_store(milvus_uri="htps_vec_store.db",htp_dir="./workflows")
+htpvs=htp_vector_store(milvus_uri="htp_vec_store.db",htp_dir="./workflows")
 #Adding new htps
 #htpvs.add_htps("./new_workflows","./workflows")
 # Example queries
-print("=== Tax Extension Query ===")
-results = htpvs.hybrid_search(
-    "How to handle tax extensions for business returns?",
-    depth=3
+print("=== Bussiness Document Validation ===")
+results = htpvs.get_best_context_by_level(
+    "Does my bussiness document 1120s meets the requirements??",
 )
 for res in results:
     print(f"Score: [{res['score']:.3f}] \n File_path : {res['file_path']} \n Content : {res['content']}\n")
     
 print("\n=== Employment tenure Validation ===")
-results = htpvs.hybrid_search(
+results = htpvs.get_best_context_by_level(
     "why does the employment tenure is classified as recently_hired?",
-    depth=3,
     top_k=3
 )
 for res in results:
