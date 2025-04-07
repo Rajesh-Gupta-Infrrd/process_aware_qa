@@ -1,0 +1,1311 @@
+[
+    {
+        "name": "rule_self_employment_cash_flow_analysis_1120",
+        "question": "Is self employment cash flow analysis for 1120 business completed?",
+        "steps": [
+            {
+                "name": "step_extract_and_validate_documents",
+                "fields": null,
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].URLA",
+                    "other_doc_types.Tax Form 1120",
+                    "other_doc_types.Tax Form 1125E",
+                    "other_doc_types.Tax Form 1120SCHG"
+                ],
+                "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n2. Extract Documents and Validate Consistency\n   From List of Tax Form 1120, pick the one for the year ({computed_application_year}-1) and From List of Tax Form 1125E, pick the one for the year {computed_application_year}-1) or From List of Tax Form 1120SCHG, pick the one for the year {computed_application_year}-1) and extract\n   - \"\"tax_year\"\" as <Tax Form 1120.Tax Year> in the form YYYY.\n   - \"\"1120_business_name\"\" as <Tax Form 1120.BusinessName>.\n   - \"\"final_return\"\" as <Final return> from \"\"Tax Form 1120\"\".\n   - \"\"taxable_income\"\" as <Taxable income> from \"\"Tax Form 1120\"\".\n   - \"\"total_tax\"\" as <Total tax> from \"\"Tax Form 1120\"\".\n   - \"\"depreciation\"\" as <Depreciation> from \"\"Tax Form 1120\"\".\n   - \"\"depletion\"\" as <Depletion> from \"\"Tax Form 1120\"\".\n   - \"\"net_operating_loss\"\" as <Net operating loss> from \"\"Tax Form 1120\"\".\n   - \"\"special_deductions\"\" as <Special deductions> from \"\"Tax Form 1120\"\".\n   - \"\"other_income\"\" as <Other income> from \"\"Tax Form 1120\"\".\n   - \"\"short_term_debt\"\" as <Mortgages, notes or bonds payable in less than 1 year> from \"\"Tax Form 1120\"\".\n   - \"\"travel_entertainment\"\" as <Travel & Entertainment Expenses> from \"\"Tax Form 1120\"\".\n   - \"\"cash_distributions\"\" as <Cash distributions> from \"\"Tax Form 1120\"\".\n   If \"\"Tax Form 1125E\"\" is present, extract:\n   - \"\"1125e_business_name\"\" as <Tax Form 1125E.BusinessName>.\n   - \"\"1125e_borrower_name\"\" as <Tax Form 1125E.Name>.\n   - \"\"preferred_stock_owned\"\" as <Preferred Stock Owned>.\n   - \"\"compensation\"\" as <Amount Of Compensation>.\n   If \"\"Tax Form 1120SCHG\"\" is present, extract:\n   - \"\"schg_business_name\"\" as <Tax Form 1120SCHG.BusinessName>.\n   - \"\"schg_borrower_name\"\" as <Tax Form 1120SCHG.Individuals Owning the Corporation. Name>.\n   - \"\"percentage_owned\"\" as <Individuals Owning the Corporation. Percentage Owned>.\n   Validate:\n   - \"\"1120_business_name\"\" = \"\"1125e_business_name\"\" OR \"\"schg_business_name\"\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"\"1125e_borrower_name\"\" OR \"\"schg_borrower_name\"\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name>\n\n3. Validate Ownership from Tax Form 1125E\n   IF (\"\"Tax Form 1125E\"\" is present) THEN  \n      IF (\"\"preferred_stock_owned\"\" > 25) THEN  \n         IF (\"\"preferred_stock_owned\"\" = 100) THEN  \n            Proceed to Step 4\n         ELSE  \n            Return Discrepency Message: \"\"As per Form 1125E (Form 1120) the ownership % is less than 100% and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\"\" and proceed to Step 4\n      ELSE  \n         Return Discrepency Message: \"\"As per Form 1125E (Form 1120) the ownership % is less than 25% and borrower cannot be considered as self-employed.\"\" and terminate the process  \n   ELSE  \n      Proceed to Step 4  \n\n4. Validate Ownership from Tax Form 1120SCHG\n   IF (\"\"Tax Form 1120SCHG\"\" is present) THEN  \n      IF (\"\"percentage_owned\"\" > 25) THEN  \n         IF (\"\"percentage_owned\"\" = 100) THEN  \n            Proceed to Step 5  \n         ELSE  \n            Return Discrepency Message: \"\"As per Form 1120 Schedule G the ownership % is less than 100% and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\"\" and proceed to Step 5  \n      ELSE  \n         Return Discrepency Message: \"\"As per Form 1120 Schedule G the ownership % is less than 25% and borrower cannot be considered as self-employed.\"\" and terminate the process  \n   ELSE  \n      Proceed to Step 5  \n\n5. Validate Final Return Status\n   IF (\"\"final_return\"\" == false) THEN  \n      Proceed to Step 6  \n   ELSE  \n      Return Discrepency Message: \"\"As per Form 1120S, it is Final return, validate if the business is still active and gather appropriate documentation.\"\" and terminate the process  \n\n6. Calculate Subtotal Business Income\n   Compute: \"\"subtotal_business_income\"\" = \"\"taxable_income\"\" - \"\"total_tax\"\" + \"\"depreciation\"\" + \"\"depletion\"\" + \"\"net_operating_loss\"\" + \"\"special_deductions\"\" - \"\"other_income\"\" - \"\"short_term_debt\"\" - \"\"travel_entertainment\"\" - \"\"cash_distributions\"\"\n\n7. Calculate Borrower\u2019s Share of Business Income\n   IF (\"\"Tax Form 1125E\"\" is present) THEN  \n      Compute: \"\"borrower_share_business_income\"\" = ((\"\"preferred_stock_owned\"\" / 100) * \"\"subtotal_business_income\"\") + \"\"compensation\"\"  \n   ELSE IF (\"\"Tax Form 1120SCHG\"\" is present) THEN  \n      Compute: \"\"borrower_share_business_income\"\" = ((\"\"percentage_owned\"\" / 100) * \"\"subtotal_business_income\"\")  \n\n8. Calculate Monthly Average\n   Compute: \"\"<tax_year>.monthly_average\"\" = \"\"borrower_share_business_income\"\" / 12\n\n9. Decision Flow\n   IF (Another version of the Tax Form 1120 and (Tax Form 1125E or Tax Form 1120SCHG) is present for the same borrower and business) THEN  \n      Skip to \"\"1120 Business \u2192 Trend Analysis\"\"  \n   ELSE \n      Skip to Step 10  \n\n---\n\n10. Store and Validate Monthly Income  \n   Store \"\"<tax_year>.monthly_average\"\" as \"\"monthly_income\"\" and  \n   Return Discrepency Message: \"\"Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.\"\" and terminate the process  \"",
+                "discrepancy_messages": "2. a. As per Form 1125E (Form 1120) the ownership % is less than 25% and borrower cannot be considered as self-employed.\n2. b. As per Form 1125E (Form 1120) the ownership % is less than 100% and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\n\n3. a. As per Form 1120 Schedule G the ownership % is less than 25% and borrower cannot be considered as self-employed.\n3. b. As per Form 1120 Schedule G the ownership % is less than 100 % and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\n\n4. As per Form 1120S, it is Final return, validate if the business is still active and gather appropriate documentation.\n\n9. Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                "doc_type_keys": [
+                    "borrowers[].URLA",
+                    "other_doc_types.Tax Form 1125E",
+                    "other_doc_types.Tax Form 1120SCHG",
+                    "other_doc_types.Tax Form 1120"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_extract_and_validate_documents",
+                        "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n2. Extract Documents and Validate Consistency\n   From List of Tax Form 1120, pick the one for the year ({computed_application_year}-1) and From List of Tax Form 1125E, pick the one for the year {computed_application_year}-1) or From List of Tax Form 1120SCHG, pick the one for the year {computed_application_year}-1) and extract\n   - \"\"tax_year\"\" as <Tax Form 1120.Tax Year> in the form YYYY.\n   - \"\"1120_business_name\"\" as <Tax Form 1120.BusinessName>.\n   - \"\"final_return\"\" as <Final return> from \"\"Tax Form 1120\"\".\n   - \"\"taxable_income\"\" as <Taxable income> from \"\"Tax Form 1120\"\".\n   - \"\"total_tax\"\" as <Total tax> from \"\"Tax Form 1120\"\".\n   - \"\"depreciation\"\" as <Depreciation> from \"\"Tax Form 1120\"\".\n   - \"\"depletion\"\" as <Depletion> from \"\"Tax Form 1120\"\".\n   - \"\"net_operating_loss\"\" as <Net operating loss> from \"\"Tax Form 1120\"\".\n   - \"\"special_deductions\"\" as <Special deductions> from \"\"Tax Form 1120\"\".\n   - \"\"other_income\"\" as <Other income> from \"\"Tax Form 1120\"\".\n   - \"\"short_term_debt\"\" as <Mortgages, notes or bonds payable in less than 1 year> from \"\"Tax Form 1120\"\".\n   - \"\"travel_entertainment\"\" as <Travel & Entertainment Expenses> from \"\"Tax Form 1120\"\".\n   - \"\"cash_distributions\"\" as <Cash distributions> from \"\"Tax Form 1120\"\".\n   If \"\"Tax Form 1125E\"\" is present, extract:\n   - \"\"1125e_business_name\"\" as <Tax Form 1125E.BusinessName>.\n   - \"\"1125e_borrower_name\"\" as <Tax Form 1125E.Name>.\n   - \"\"preferred_stock_owned\"\" as <Preferred Stock Owned>.\n   - \"\"compensation\"\" as <Amount Of Compensation>.\n   If \"\"Tax Form 1120SCHG\"\" is present, extract:\n   - \"\"schg_business_name\"\" as <Tax Form 1120SCHG.BusinessName>.\n   - \"\"schg_borrower_name\"\" as <Tax Form 1120SCHG.Individuals Owning the Corporation. Name>.\n   - \"\"percentage_owned\"\" as <Individuals Owning the Corporation. Percentage Owned>.\n   Validate:\n   - \"\"1120_business_name\"\" = \"\"1125e_business_name\"\" OR \"\"schg_business_name\"\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"\"1125e_borrower_name\"\" OR \"\"schg_borrower_name\"\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name>\n\n3. Validate Ownership from Tax Form 1125E\n   IF (\"\"Tax Form 1125E\"\" is present) THEN  \n      IF (\"\"preferred_stock_owned\"\" > 25) THEN  \n         IF (\"\"preferred_stock_owned\"\" = 100) THEN  \n            Proceed to Step 4\n         ELSE  \n            Return Discrepency Message: \"\"As per Form 1125E (Form 1120) the ownership % is less than 100% and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\"\" and proceed to Step 4\n      ELSE  \n         Return Discrepency Message: \"\"As per Form 1125E (Form 1120) the ownership % is less than 25% and borrower cannot be considered as self-employed.\"\" and terminate the process  \n   ELSE  \n      Proceed to Step 4  \n\n4. Validate Ownership from Tax Form 1120SCHG\n   IF (\"\"Tax Form 1120SCHG\"\" is present) THEN  \n      IF (\"\"percentage_owned\"\" > 25) THEN  \n         IF (\"\"percentage_owned\"\" = 100) THEN  \n            Proceed to Step 5  \n         ELSE  \n            Return Discrepency Message: \"\"As per Form 1120 Schedule G the ownership % is less than 100% and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\"\" and proceed to Step 5  \n      ELSE  \n         Return Discrepency Message: \"\"As per Form 1120 Schedule G the ownership % is less than 25% and borrower cannot be considered as self-employed.\"\" and terminate the process  \n   ELSE  \n      Proceed to Step 5  \n\n5. Validate Final Return Status\n   IF (\"\"final_return\"\" == false) THEN  \n      Proceed to Step 6  \n   ELSE  \n      Return Discrepency Message: \"\"As per Form 1120S, it is Final return, validate if the business is still active and gather appropriate documentation.\"\" and terminate the process  \n\n6. Calculate Subtotal Business Income\n   Compute: \"\"subtotal_business_income\"\" = \"\"taxable_income\"\" - \"\"total_tax\"\" + \"\"depreciation\"\" + \"\"depletion\"\" + \"\"net_operating_loss\"\" + \"\"special_deductions\"\" - \"\"other_income\"\" - \"\"short_term_debt\"\" - \"\"travel_entertainment\"\" - \"\"cash_distributions\"\"\n\n7. Calculate Borrower\u2019s Share of Business Income\n   IF (\"\"Tax Form 1125E\"\" is present) THEN  \n      Compute: \"\"borrower_share_business_income\"\" = ((\"\"preferred_stock_owned\"\" / 100) * \"\"subtotal_business_income\"\") + \"\"compensation\"\"  \n   ELSE IF (\"\"Tax Form 1120SCHG\"\" is present) THEN  \n      Compute: \"\"borrower_share_business_income\"\" = ((\"\"percentage_owned\"\" / 100) * \"\"subtotal_business_income\"\")  \n\n8. Calculate Monthly Average\n   Compute: \"\"<tax_year>.monthly_average\"\" = \"\"borrower_share_business_income\"\" / 12\n\n9. Decision Flow\n   IF (Another version of the Tax Form 1120 and (Tax Form 1125E or Tax Form 1120SCHG) is present for the same borrower and business) THEN  \n      Skip to \"\"1120 Business \u2192 Trend Analysis\"\"  \n   ELSE \n      Skip to Step 10  \n\n---\n\n10. Store and Validate Monthly Income  \n   Store \"\"<tax_year>.monthly_average\"\" as \"\"monthly_income\"\" and  \n   Return Discrepency Message: \"\"Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.\"\" and terminate the process  \"",
+                        "discrepancy_messages": "2. a. As per Form 1125E (Form 1120) the ownership % is less than 25% and borrower cannot be considered as self-employed.\n2. b. As per Form 1125E (Form 1120) the ownership % is less than 100% and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\n\n3. a. As per Form 1120 Schedule G the ownership % is less than 25% and borrower cannot be considered as self-employed.\n3. b. As per Form 1120 Schedule G the ownership % is less than 100 % and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.\n\n4. As per Form 1120S, it is Final return, validate if the business is still active and gather appropriate documentation.\n\n9. Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                        "tasks": [
+                            {
+                                "task_name": "extract_dates_and_years",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Extract the year from the 'application_date'. The input 'application_date' is in one of the formats: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY. Parse the date string and extract the year component, then assign this value to 'computed_application_year'.",
+                                        "inputs": [
+                                            "'application_date': input_data -> 'application_date' -> 'value'"
+                                        ],
+                                        "formulas": [
+                                            "computed_application_year = last 4 characters of the date string after detecting delimiters or by splitting on non-numeric characters"
+                                        ],
+                                        "outputs": [
+                                            "'computed_application_year': The extracted year in YYYY format."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_application_year",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "application_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['application_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The extracted year in YYYY format."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "extract_documents_and_validate_consistency",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "Select the relevant tax document for Tax Form 1120. Using the computed_application_year obtained in Task 1, deduct 1 from it (computed_application_year - 1) and pick the document from the list of Tax Form 1120 whose 'tax_year' equals that computed value. Then extract the following fields: 'tax_year' (from Tax Form 1120.Tax Year), '1120_business_name' (from Tax Form 1120.BusinessName), 'final_return' (from Tax Form 1120.Final return), 'taxable_income' (from Tax Form 1120.Taxable income), 'total_tax' (from Tax Form 1120.Total tax), 'depreciation' (from Tax Form 1120.Depreciation), 'depletion' (from Tax Form 1120.Depletion), 'net_operating_loss' (from Tax Form 1120.Net operating loss), 'special_deductions' (from Tax Form 1120.Special deductions), 'other_income' (from Tax Form 1120.Other income), 'short_term_debt' (from Tax Form 1120.Mortgages, notes or bonds payable in less than 1 year), 'travel_entertainment' (from Tax Form 1120.Travel & Entertainment Expenses) and 'cash_distributions' (from Tax Form 1120.Cash distributions).",
+                                        "inputs": [
+                                            "'computed_application_year': from Task 1 outputs",
+                                            "'Tax Form 1120': input_data -> 'other_doc_types' -> 'Tax Form 1120' (list of documents) \u2192 filter for document where 'tax_year.value' equals (computed_application_year - 1)"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'tax_year': Extracted Tax Year from Tax Form 1120 in YYYY format",
+                                            "'1120_business_name': Business name from Tax Form 1120",
+                                            "'final_return': Boolean value from Tax Form 1120 indicating if it is the final return",
+                                            "'taxable_income': Taxable income value from Tax Form 1120",
+                                            "'total_tax': Total tax value from Tax Form 1120",
+                                            "'depreciation': Depreciation value from Tax Form 1120",
+                                            "'depletion': Depletion value from Tax Form 1120",
+                                            "'net_operating_loss': Net operating loss value from Tax Form 1120",
+                                            "'special_deductions': Special deductions value from Tax Form 1120",
+                                            "'other_income': Other income value from Tax Form 1120",
+                                            "'short_term_debt': Short term debt value from Tax Form 1120",
+                                            "'travel_entertainment': Travel & Entertainment Expenses value from Tax Form 1120",
+                                            "'cash_distributions': Cash distributions value from Tax Form 1120"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_and_extract_tax_form_1120",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The computed application year obtained from Task 1 output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1120_docs",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1120 documents from input_data -> 'other_doc_types' -> 'Tax Form 1120'.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "corporation_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120CorporationName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "is_final_return_checked": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "boolean",
+                                                                            "description": "Tax Form 1120.taxForm1120FinalReturn Boolean"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "taxable_income": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.3d946349-e4a8-4d54-b71e-72fe26eccf19.Taxable income"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "total_tax": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.903bca39-6c43-4c7c-9921-ff7ed4fa8f09.Total tax"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depreciation_from_form_4562": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120DepreciationfromForm4562 String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depletion": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120Depletion String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "net_operating_loss": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.11111111111"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "special_deductions": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.22222222222"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "other_income": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120OtherIncome String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120ScheduleLMortgagesNotesBondsPayableinLessThan1YearEndofTaxYear String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_m1_travel_and_entertainment_expenses": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120ScheduleM1TravelandEntertainmentExpenses String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_m2_cash_distributions": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120ScheduleM2CashDistributions String (Currency)"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1120']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "tax_year",
+                                                    "data_type": "String",
+                                                    "description": "Extracted Tax Year from Tax Form 1120 in YYYY format."
+                                                },
+                                                {
+                                                    "field_name": "business_name",
+                                                    "data_type": "String",
+                                                    "description": "Business name from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "final_return",
+                                                    "data_type": "Boolean",
+                                                    "description": "Boolean value from Tax Form 1120 indicating if it is the final return."
+                                                },
+                                                {
+                                                    "field_name": "taxable_income",
+                                                    "data_type": "String",
+                                                    "description": "Taxable income value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "total_tax",
+                                                    "data_type": "String",
+                                                    "description": "Total tax value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "Depreciation value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "Depletion value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "net_operating_loss",
+                                                    "data_type": "String",
+                                                    "description": "Net operating loss value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "special_deductions",
+                                                    "data_type": "String",
+                                                    "description": "Special deductions value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "other_income",
+                                                    "data_type": "String",
+                                                    "description": "Other income value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "Short term debt value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "travel_entertainment",
+                                                    "data_type": "String",
+                                                    "description": "Travel & Entertainment Expenses value from Tax Form 1120."
+                                                },
+                                                {
+                                                    "field_name": "cash_distributions",
+                                                    "data_type": "String",
+                                                    "description": "Cash distributions value from Tax Form 1120."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "2.b",
+                                        "description": "If present, select the document from the list of Tax Form 1125E for the year (computed_application_year - 1) and extract the following fields: '1125e_business_name' (from Tax Form 1125E.BusinessName), '1125e_borrower_name' (from Tax Form 1125E.Name), 'preferred_stock_owned' (from the Preferred Stock Owned field), and 'compensation' (from the Amount Of Compensation field).",
+                                        "inputs": [
+                                            "'computed_application_year': from Task 1 outputs",
+                                            "'Tax Form 1125E': input_data -> 'other_doc_types' -> 'Tax Form 1125E' (list of documents) \u2192 filter for document where 'tax_year.value' equals (computed_application_year - 1)"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'1125e_business_name': Business name extracted from Tax Form 1125E",
+                                            "'1125e_borrower_name': Borrower name extracted from Tax Form 1125E",
+                                            "'preferred_stock_owned': Ownership percentage (as a string or numeric) from Tax Form 1125E",
+                                            "'compensation': Amount Of Compensation from Tax Form 1125E"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_and_extract_tax_form_1125e",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The computed application year obtained from Task 1 output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1125e_docs",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1125E documents from input_data -> 'other_doc_types' -> 'Tax Form 1125E'.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1125E.taxForm1125ETaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "name_of_corporation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1125E.taxForm1125ENameofCorporation String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "compensation_of_officers": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string",
+                                                                                        "description": "abc"
+                                                                                    },
+                                                                                    "preferred_stock_owned": {
+                                                                                        "type": "string",
+                                                                                        "description": ""
+                                                                                    },
+                                                                                    "amount_of_compensation": {
+                                                                                        "type": "string",
+                                                                                        "description": ""
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1125E']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "business_name",
+                                                    "data_type": "String",
+                                                    "description": "Business name extracted from Tax Form 1125E."
+                                                },
+                                                {
+                                                    "field_name": "borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name extracted from Tax Form 1125E."
+                                                },
+                                                {
+                                                    "field_name": "preferred_stock_owned",
+                                                    "data_type": "String",
+                                                    "description": "Ownership percentage from Tax Form 1125E."
+                                                },
+                                                {
+                                                    "field_name": "compensation",
+                                                    "data_type": "String",
+                                                    "description": "Amount Of Compensation from Tax Form 1125E."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "2.c",
+                                        "description": "If present, select the document from the list of Tax Form 1120SCHG for the year (computed_application_year - 1) and extract the following fields: 'schg_business_name' (from Tax Form 1120SCHG.BusinessName), 'schg_borrower_name' (from Tax Form 1120SCHG.Individuals Owning the Corporation. Name) and 'percentage_owned' (from Individuals Owning the Corporation.Percentage Owned).",
+                                        "inputs": [
+                                            "'computed_application_year': from Task 1 outputs",
+                                            "'Tax Form 1120SCHG': input_data -> 'other_doc_types' -> 'Tax Form 1120SCHG' (list of documents) \u2192 filter for document where 'tax_year.value' equals (computed_application_year - 1)"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'schg_business_name': Business name extracted from Tax Form 1120SCHG",
+                                            "'schg_borrower_name': Borrower name extracted from Tax Form 1120SCHG",
+                                            "'percentage_owned': Ownership percentage from Tax Form 1120SCHG"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_and_extract_tax_form_1120schg",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The computed application year obtained from Task 1 output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1120schg_docs",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1120SCHG documents from input_data -> 'other_doc_types' -> 'Tax Form 1120SCHG'.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120SCHG.taxForm1120SCHGTaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "business_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120SCHG.taxForm1120SCHGBusinessName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "individuals_owning_the_corporation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string",
+                                                                                        "description": "abc"
+                                                                                    },
+                                                                                    "percentage_owned": {
+                                                                                        "type": "string",
+                                                                                        "description": ""
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1120SCHG']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "business_name",
+                                                    "data_type": "String",
+                                                    "description": "Business name extracted from Tax Form 1120SCHG."
+                                                },
+                                                {
+                                                    "field_name": "borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name extracted from Tax Form 1120SCHG."
+                                                },
+                                                {
+                                                    "field_name": "percentage_owned",
+                                                    "data_type": "String",
+                                                    "description": "Ownership percentage from Tax Form 1120SCHG."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "2.d",
+                                        "description": "Validate document consistency by comparing business and borrower names across the documents. Check that either '1120_business_name' equals '1125e_business_name' OR 'schg_business_name' equals either the borrower's employer name extracted from URLA (navigated from input_data -> borrowers -> first borrower -> URLA -> employer_name -> value) OR the additional employer name (navigated from input_data -> borrowers -> first borrower -> additional_employer -> first item -> employer_name -> value). Also, verify that either '1125e_borrower_name' or 'schg_borrower_name' equals the borrower's name extracted from URLA (input_data -> borrowers -> first borrower -> URLA -> borrower_name -> value) OR from URLA Additional Borrower (input_data -> borrowers -> first borrower -> additional_employer -> first item -> borrower_name -> value).",
+                                        "inputs": [
+                                            "'1120_business_name': from subtask 2.a outputs",
+                                            "'1125e_business_name': from subtask 2.b outputs (if available)",
+                                            "'schg_business_name': from subtask 2.c outputs (if available)",
+                                            "'URLA_employer_name': input_data -> borrowers -> first borrower -> URLA -> employer_name -> value",
+                                            "'URLA_additional_employer_name': input_data -> borrowers -> first borrower -> additional_employer -> first item -> employer_name -> value",
+                                            "'1125e_borrower_name': from subtask 2.b outputs (if available)",
+                                            "'schg_borrower_name': from subtask 2.c outputs (if available)",
+                                            "'URLA_borrower_name': input_data -> borrowers -> first borrower -> URLA -> borrower_name -> value",
+                                            "'URLA_additional_borrower_name': input_data -> borrowers -> first borrower -> additional_employer -> first item -> borrower_name -> value"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'document_consistency_valid': A Boolean indicating whether the extracted document information is consistent."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_document_consistency",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "business_name_1120",
+                                                    "data_type": "String",
+                                                    "description": "Business name from Tax Form 1120.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['business_name']"
+                                                },
+                                                {
+                                                    "argument_name": "business_name_1125e",
+                                                    "data_type": "String",
+                                                    "description": "Business name from Tax Form 1125E, if available.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.b']['business_name']"
+                                                },
+                                                {
+                                                    "argument_name": "business_name_schg",
+                                                    "data_type": "String",
+                                                    "description": "Business name from Tax Form 1120SCHG, if available.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.c']['business_name']"
+                                                },
+                                                {
+                                                    "argument_name": "url_employer_name",
+                                                    "data_type": "String",
+                                                    "description": "Employer name extracted from URLA.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['employer_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "url_additional_employer_name",
+                                                    "data_type": "String",
+                                                    "description": "Additional employer name extracted from URLA.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['additional_employer'][0]['employer_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_name_1125e",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name from Tax Form 1125E, if available.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.b']['borrower_name']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_name_schg",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name from Tax Form 1120SCHG, if available.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.c']['borrower_name']"
+                                                },
+                                                {
+                                                    "argument_name": "url_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name extracted from URLA.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['borrower_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "url_additional_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Additional borrower name extracted from URLA.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['additional_employer'][0]['employer_name']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Boolean",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "document_consistency_valid",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether the extracted document information is consistent."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_ownership_from_tax_form_1125e",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "If a Tax Form 1125E is present (as determined in Task 2), then check the 'preferred_stock_owned' value. First, if 'preferred_stock_owned' is greater than 25, then: \u2022 If 'preferred_stock_owned' equals 100, proceed to the next step (do nothing extra). \u2022 Else, return the discrepancy message: 'As per Form 1125E (Form 1120) the ownership % is less than 100% and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.' and proceed to Step 4. If 'preferred_stock_owned' is not greater than 25, return the discrepancy message: 'As per Form 1125E (Form 1120) the ownership % is less than 25% and borrower cannot be considered as self-employed.' and terminate the process.",
+                                        "inputs": [
+                                            "'preferred_stock_owned': from subtask 2.b output (if Tax Form 1125E is present)"
+                                        ],
+                                        "formulas": [
+                                            "Check if preferred_stock_owned > 25",
+                                            "If true, then check if preferred_stock_owned == 100"
+                                        ],
+                                        "outputs": [
+                                            "'ownership_validation_1125E': A flag indicating whether ownership criteria are met for Tax Form 1125E."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_ownership_from_1125e",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "preferred_stock_owned",
+                                                    "data_type": "String",
+                                                    "description": "Ownership percentage from Tax Form 1125E extracted in subtask 2.b.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.b']['preferred_stock_owned']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "ownership_validation_1125e",
+                                                    "data_type": "Boolean",
+                                                    "description": "A flag indicating whether ownership criteria are met for Tax Form 1125E."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if ownership criteria are not met."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_ownership_from_tax_form_1120schg",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "4.a",
+                                        "description": "If a Tax Form 1120SCHG is present (as determined in Task 2), then check the 'percentage_owned' value. If 'percentage_owned' is greater than 25, then: \u2022 If 'percentage_owned' equals 100, proceed to the next step (Step 5). \u2022 Else, return the discrepancy message: 'As per Form 1120 Schedule G the ownership % is less than 100 % and earnings may not be used unless the borrower owns 100% of the business, validate if all the borrowers on the loan combined own 100% of the business before using the income from the business.' and proceed to Step 5. If 'percentage_owned' is not greater than 25, return the discrepancy message: 'As per Form 1120 Schedule G the ownership % is less than 25% and borrower cannot be considered as self-employed.' and terminate the process.",
+                                        "inputs": [
+                                            "'percentage_owned': from subtask 2.c output (if Tax Form 1120SCHG is present)"
+                                        ],
+                                        "formulas": [
+                                            "Check if percentage_owned > 25",
+                                            "If true, then check if percentage_owned == 100"
+                                        ],
+                                        "outputs": [
+                                            "'ownership_validation_1120SCHG': A flag indicating whether ownership criteria are met for Tax Form 1120SCHG."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_ownership_1120schg",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "percentage_owned",
+                                                    "data_type": "String",
+                                                    "description": "Ownership percentage from Tax Form 1120SCHG. Extracted from subtask 2.c output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.c']['percentage_owned']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "ownership_validation_1120SCHG",
+                                                    "data_type": "Boolean",
+                                                    "description": "A flag indicating whether ownership criteria are met for Tax Form 1120SCHG."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if ownership criteria are not met."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_final_return_status",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "5.a",
+                                        "description": "Check the 'final_return' field extracted from Tax Form 1120. If 'final_return' is false then proceed to the next step. If 'final_return' is true, return the discrepancy message: 'As per Form 1120S, it is Final return, validate if the business is still active and gather appropriate documentation.' and terminate the process.",
+                                        "inputs": [
+                                            "'final_return': from subtask 2.a output"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'final_return_validation': A Boolean indicating if the final return status is acceptable."
+                                        ],
+                                        "discrepancy_string": "As per Form 1120S, it is Final return, validate if the business is still active and gather appropriate documentation.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_final_return_status",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "final_return",
+                                                    "data_type": "Boolean",
+                                                    "description": "Boolean value from Tax Form 1120 indicating if it is the final return. Extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['final_return']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "final_return_validation",
+                                                    "data_type": "Boolean",
+                                                    "description": "A Boolean indicating if the final return status is acceptable."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if the final return is true."
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_subtotal_business_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "6.a",
+                                        "description": "Calculate the subtotal business income from Tax Form 1120 using the formula: subtotal_business_income = taxable_income - total_tax + depreciation + depletion + net_operating_loss + special_deductions - other_income - short_term_debt - travel_entertainment - cash_distributions.",
+                                        "inputs": [
+                                            "'taxable_income': from subtask 2.a output",
+                                            "'total_tax': from subtask 2.a output",
+                                            "'depreciation': from subtask 2.a output",
+                                            "'depletion': from subtask 2.a output",
+                                            "'net_operating_loss': from subtask 2.a output",
+                                            "'special_deductions': from subtask 2.a output",
+                                            "'other_income': from subtask 2.a output",
+                                            "'short_term_debt': from subtask 2.a output",
+                                            "'travel_entertainment': from subtask 2.a output",
+                                            "'cash_distributions': from subtask 2.a output"
+                                        ],
+                                        "formulas": [
+                                            "subtotal_business_income = taxable_income - total_tax + depreciation + depletion + net_operating_loss + special_deductions - other_income - short_term_debt - travel_entertainment - cash_distributions"
+                                        ],
+                                        "outputs": [
+                                            "'subtotal_business_income': The calculated subtotal business income value."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_subtotal_business_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "taxable_income",
+                                                    "data_type": "String",
+                                                    "description": "Taxable income value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['taxable_income']"
+                                                },
+                                                {
+                                                    "argument_name": "total_tax",
+                                                    "data_type": "String",
+                                                    "description": "Total tax value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['total_tax']"
+                                                },
+                                                {
+                                                    "argument_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "Depreciation value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['depreciation']"
+                                                },
+                                                {
+                                                    "argument_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "Depletion value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['depletion']"
+                                                },
+                                                {
+                                                    "argument_name": "net_operating_loss",
+                                                    "data_type": "String",
+                                                    "description": "Net operating loss value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['net_operating_loss']"
+                                                },
+                                                {
+                                                    "argument_name": "special_deductions",
+                                                    "data_type": "String",
+                                                    "description": "Special deductions value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['special_deductions']"
+                                                },
+                                                {
+                                                    "argument_name": "other_income",
+                                                    "data_type": "String",
+                                                    "description": "Other income value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['other_income']"
+                                                },
+                                                {
+                                                    "argument_name": "short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "Short term debt value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['short_term_debt']"
+                                                },
+                                                {
+                                                    "argument_name": "travel_entertainment",
+                                                    "data_type": "String",
+                                                    "description": "Travel & Entertainment Expenses value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['travel_entertainment']"
+                                                },
+                                                {
+                                                    "argument_name": "cash_distributions",
+                                                    "data_type": "String",
+                                                    "description": "Cash distributions value from Tax Form 1120, extracted from subtask 2.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['cash_distributions']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "subtotal_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The calculated subtotal business income value."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_borrower_share_of_business_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "7.a",
+                                        "description": "Calculate the borrower's share of business income based on the available tax form. If Tax Form 1125E is present then compute borrower_share_business_income = (preferred_stock_owned / 100 * subtotal_business_income) + compensation. Else if Tax Form 1120SCHG is present then compute borrower_share_business_income = (percentage_owned / 100 * subtotal_business_income).",
+                                        "inputs": [
+                                            "'subtotal_business_income': from Task 6 outputs",
+                                            "'preferred_stock_owned': from subtask 2.b output (if available)",
+                                            "'compensation': from subtask 2.b output (if available)",
+                                            "'percentage_owned': from subtask 2.c output (if available)"
+                                        ],
+                                        "formulas": [
+                                            "If Tax Form 1125E exists: borrower_share_business_income = (preferred_stock_owned / 100) * subtotal_business_income + compensation",
+                                            "Else if Tax Form 1120SCHG exists: borrower_share_business_income = (percentage_owned / 100) * subtotal_business_income"
+                                        ],
+                                        "outputs": [
+                                            "'borrower_share_business_income': The calculated business income share for the borrower."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_borrower_share_of_business_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "subtotal_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The calculated subtotal business income value from Task 6 output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['calculate_subtotal_business_income']['6.a']['subtotal_business_income']"
+                                                },
+                                                {
+                                                    "argument_name": "preferred_stock_owned",
+                                                    "data_type": "String",
+                                                    "description": "Ownership percentage from Tax Form 1125E, extracted from subtask 2.b output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.b']['preferred_stock_owned']"
+                                                },
+                                                {
+                                                    "argument_name": "compensation",
+                                                    "data_type": "String",
+                                                    "description": "Amount Of Compensation from Tax Form 1125E, extracted from subtask 2.b output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.b']['compensation']"
+                                                },
+                                                {
+                                                    "argument_name": "percentage_owned",
+                                                    "data_type": "String",
+                                                    "description": "Ownership percentage from Tax Form 1120SCHG, extracted from subtask 2.c output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.c']['percentage_owned']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "borrower_share_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The calculated business income share for the borrower."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_monthly_average",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "8.a",
+                                        "description": "Calculate the monthly average income by dividing the borrower's share business income by 12. Assign this value to an output variable labelled as '<tax_year>.monthly_average', where <tax_year> is the tax year extracted in Task 2.",
+                                        "inputs": [
+                                            "'borrower_share_business_income': from Task 7 outputs"
+                                        ],
+                                        "formulas": [
+                                            "<tax_year>.monthly_average = borrower_share_business_income / 12"
+                                        ],
+                                        "outputs": [
+                                            "'monthly_average': The monthly average income calculated."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_monthly_average_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "borrower_share_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The borrower's share of business income extracted from Task 7 outputs.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['calculate_borrower_share_of_business_income']['7.a']['borrower_share_business_income']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_year",
+                                                    "data_type": "String",
+                                                    "description": "The tax year extracted in Task 2.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['extract_documents_and_validate_consistency']['2.a']['tax_year']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_average",
+                                                    "data_type": "String",
+                                                    "description": "The monthly average income calculated."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "decision_flow",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "9.a",
+                                        "description": "Check if another version of the Tax Form 1120 along with either Tax Form 1125E or Tax Form 1120SCHG is present for the same borrower and business. If such an alternate version exists, skip to the task '1120 Business \u2192 Trend Analysis'. Otherwise, skip to Step 10.",
+                                        "inputs": [
+                                            "'Tax Form 1120': input_data -> 'other_doc_types' -> 'Tax Form 1120' (list)",
+                                            "'Tax Form 1125E': input_data -> 'other_doc_types' -> 'Tax Form 1125E' (if present)",
+                                            "'Tax Form 1120SCHG': input_data -> 'other_doc_types' -> 'Tax Form 1120SCHG' (if present)"
+                                        ],
+                                        "formulas": [
+                                            "Determine presence of an alternate version by matching borrower and business identifiers across the available documents"
+                                        ],
+                                        "outputs": [
+                                            "'alternate_version_found': A Boolean flag indicating if an alternate version is present."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": "1120_business_\u2192_trend_analysis",
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_alternate_version_presence",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "tax_form_1120",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1120 documents for the borrower and business.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "corporation_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120CorporationName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "employer_identification_number": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120EmployerIdentificationNumber(EIN) String"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1120']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1125e",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1125E documents if present.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1125E.taxForm1125ETaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "corporation_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1125E.taxForm1125ENameofCorporation String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "employer_identification_number": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1125E.taxForm1125EEmployerIdentificationNumber(EIN) String"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1125E']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1120schg",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1120SCHG documents if present.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120SCHG.taxForm1120SCHGTaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "business_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120SCHG.taxForm1120SCHGBusinessName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "employer_identification_number": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120SCHG.taxForm1120SCHGEIN String"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1120SCHG']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "alternate_version_found",
+                                                    "data_type": "Boolean",
+                                                    "description": "A Boolean flag indicating if an alternate version is present."
+                                                },
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the task '1120 Business \u2192 Trend Analysis'."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "9.b",
+                                        "description": "If no alternate version is found, continue the process by proceeding to Step 10.",
+                                        "inputs": [],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'decision_flag': Indicates that the process should continue to Step 10."
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "continue_to_step_10",
+                                            "arguments": [],
+                                            "return_type": "Boolean",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "decision_flag",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates that the process should continue to Step 10."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "store_and_validate_monthly_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "10.a",
+                                        "description": "Store the computed monthly average as 'monthly_income'. Then, return a discrepancy message along with terminating the process. The message to be returned is: 'Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.'",
+                                        "inputs": [
+                                            "'monthly_average': from Task 8 outputs"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'monthly_income': The same value as monthly_average stored for business use",
+                                            "'discrepancy_msg': The discrepancy message regarding single-year data usage."
+                                        ],
+                                        "discrepancy_string": "Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "store_and_validate_monthly_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "monthly_average",
+                                                    "data_type": "String",
+                                                    "description": "The monthly average income calculated from Task 8 outputs.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['calculate_monthly_average']['8.a']['monthly_average']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_income",
+                                                    "data_type": "String",
+                                                    "description": "The same value as monthly_average stored for business use."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The discrepancy message regarding single-year data usage."
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

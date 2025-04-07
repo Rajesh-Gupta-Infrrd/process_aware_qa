@@ -1,0 +1,788 @@
+[
+    {
+        "name": "rule_schedule_c_self_employment_cash_flow_analysis",
+        "question": "Is Schedule C self employment cash flow analysis completed?",
+        "steps": [
+            {
+                "name": "step_schedule_c_validation",
+                "fields": "SCH C Business \u2192 \nCalculation",
+                "split_cell": false,
+                "schema_keys": [],
+                "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n2. Extract Document and Data \n   From List of Tax Form 1040, pick the one for the year {computed_application_year}-1 for the same borrower and the same business as identified in URLA and extract:\n   - \u201cbusiness_miles\u201d as the value of <Business Miles>.\n   - \u201cnet_profit_or_loss\u201d as the value of <Net profit or loss>.\n   - \u201cother_income\u201d as the value of <Other income>.\n   - \u201cdepletion\u201d as the value of <Depletion>.\n   - \u201cdepreciation\u201d as the value of <Depreciation>.\n   - \u201cdeductible_meals\u201d as the value of <Deductible meals>.\n   - \u201chome_business_expenses\u201d as the value of <Expenses for business use of your home>.\n\n3. Assign Mileage Rate\n   Assign the mileage rate based on \u201c{computed_application_year-1}\u201d from the following list:\n   - 2025 = 0.33\n   - 2024 = 0.30\n   - 2023 = 0.28\n   - 2022 = 0.26\n   - 2021 = 0.26\n   - 2020 = 0.27\n   - 2019 = 0.26\n   - 2018 = 0.25\n   - 2017 = 0.25\n   - 2016 = 0.24\n   - 2015 = 0.24\n   - 2014 = 0.22\n   Store the assigned value as \u201cmileage_rate\u201d.\n\n4. Calculate Vehicle Depreciation\n   Compute: \u201cvehicle_depreciation\u201d = \u201cbusiness_miles\u201d * \u201cmileage_rate\u201d\n\n5. Calculate Monthly Average\n   Compute: \u201c<{computed_application_year-1}>.monthly_average\u201d = [\u201cnet_profit_or_loss\u201d - \u201cother_income\u201d + \u201cdepletion\u201d + \u201cdepreciation\u201d - \u201cdeductible_meals\u201d + \u201chome_business_expenses\u201d + \u201cvehicle_depreciation\u201d] / 12\n\n6. Decision Flow (seperate both into different subtasks )\n    - IF (Another version of the doc_type \u201cTax Form 1040SCHC\u201d is present for the same borrower and business) THEN  \n      Skip to Process \u201cSCH C Business \u2192 Trend Analysis\u201d  \n    - IF above condition is not satisifed,  \n       Skip to Step 7 ( i.e, Store and Validate Monthly Income)\n\n---\n\n7. Store and Validate Monthly Income  \n   Store \u201c<{computed_application_year-1}>.monthly_average\u201d as \u201cmonthly_income\u201d and  \n   Return Discrepency Message: \u201cOnly 1 year of Personal Tax Returns 1040's is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.\u201d and terminate the process  ",
+                "discrepancy_messages": "5. Only 1 year of Personal Tax Returns 1040's is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                "doc_type_keys": [
+                    "borrowers[].URLA",
+                    "borrowers[].Tax Form 1040",
+                    "borrowers[].Tax Form 1040SCHC"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_schedule_c_validation",
+                        "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n2. Extract Document and Data \n   From List of Tax Form 1040, pick the one for the year {computed_application_year}-1 for the same borrower and the same business as identified in URLA and extract:\n   - \u201cbusiness_miles\u201d as the value of <Business Miles>.\n   - \u201cnet_profit_or_loss\u201d as the value of <Net profit or loss>.\n   - \u201cother_income\u201d as the value of <Other income>.\n   - \u201cdepletion\u201d as the value of <Depletion>.\n   - \u201cdepreciation\u201d as the value of <Depreciation>.\n   - \u201cdeductible_meals\u201d as the value of <Deductible meals>.\n   - \u201chome_business_expenses\u201d as the value of <Expenses for business use of your home>.\n\n3. Assign Mileage Rate\n   Assign the mileage rate based on \u201c{computed_application_year-1}\u201d from the following list:\n   - 2025 = 0.33\n   - 2024 = 0.30\n   - 2023 = 0.28\n   - 2022 = 0.26\n   - 2021 = 0.26\n   - 2020 = 0.27\n   - 2019 = 0.26\n   - 2018 = 0.25\n   - 2017 = 0.25\n   - 2016 = 0.24\n   - 2015 = 0.24\n   - 2014 = 0.22\n   Store the assigned value as \u201cmileage_rate\u201d.\n\n4. Calculate Vehicle Depreciation\n   Compute: \u201cvehicle_depreciation\u201d = \u201cbusiness_miles\u201d * \u201cmileage_rate\u201d\n\n5. Calculate Monthly Average\n   Compute: \u201c<{computed_application_year-1}>.monthly_average\u201d = [\u201cnet_profit_or_loss\u201d - \u201cother_income\u201d + \u201cdepletion\u201d + \u201cdepreciation\u201d - \u201cdeductible_meals\u201d + \u201chome_business_expenses\u201d + \u201cvehicle_depreciation\u201d] / 12\n\n6. Decision Flow (seperate both into different subtasks )\n    - IF (Another version of the doc_type \u201cTax Form 1040SCHC\u201d is present for the same borrower and business) THEN  \n      Skip to Process \u201cSCH C Business \u2192 Trend Analysis\u201d  \n    - IF above condition is not satisifed,  \n       Skip to Step 7 ( i.e, Store and Validate Monthly Income)\n\n---\n\n7. Store and Validate Monthly Income  \n   Store \u201c<{computed_application_year-1}>.monthly_average\u201d as \u201cmonthly_income\u201d and  \n   Return Discrepency Message: \u201cOnly 1 year of Personal Tax Returns 1040's is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.\u201d and terminate the process  ",
+                        "discrepancy_messages": "5. Only 1 year of Personal Tax Returns 1040's is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                        "tasks": [
+                            {
+                                "task_name": "extract_dates_and_years",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Extract the year from the application_date. Parse the date string provided in application_date (which can be in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY format) by splitting on '/', '-', or '.'. Select the last component, which represents the year, and assign it as computed_application_year in YYYY format.",
+                                        "inputs": [
+                                            "'application_date': input_data -> application_date -> value"
+                                        ],
+                                        "formulas": [
+                                            "year = last element of (application_date split on '/', '-', or '.')"
+                                        ],
+                                        "outputs": [
+                                            "'computed_application_year': Year extracted from application_date in YYYY format"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_application_year",
+                                            "function_description": "Extracts the year from the application_date string, which can be in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY format, and returns it in YYYY format.",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "application_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['application_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "Year extracted from application_date in YYYY format"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "extract_document_and_data",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "Filter the list of Tax Form 1040 documents to select the one matching the previous year computed from the application_date. Calculate computed_tax_year = int(computed_application_year) - 1 and select the document where the 'tax_year' field matches this computed_tax_year as a string, and where the borrower and business details match those provided in the first borrower's URLA information.",
+                                        "inputs": [
+                                            "'computed_application_year': output from extract_dates_and_years -> computed_application_year",
+                                            "'Tax_Form_1040': input_data -> Tax Form 1040 (list)",
+                                            "'borrower_URLA': input_data -> borrowers -> first borrower -> URLA"
+                                        ],
+                                        "formulas": [
+                                            "computed_tax_year = int(computed_application_year) - 1"
+                                        ],
+                                        "outputs": [
+                                            "'selected_tax_form': The Tax Form 1040 document from the list that matches computed_tax_year and the associated borrower/business details from URLA"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "filter_tax_form_1040",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "Year extracted from application_date in YYYY format",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1040",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1040 documents",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "borrower_first_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1040.First Name and Initial String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "borrower_last_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1040.Last Name String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "borrower_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Custom field String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "ssn": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1040.SSN String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "address": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "city": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "value": {
+                                                                                    "type": "string",
+                                                                                    "description": "Tax Form 1040.City String"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "state": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "value": {
+                                                                                    "type": "string",
+                                                                                    "description": "Tax Form 1040.State String"
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "zip": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "value": {
+                                                                                    "type": "string",
+                                                                                    "description": "Tax Form 1040.Zip String"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_url",
+                                                    "data_type": "dict",
+                                                    "description": "Borrower and business details from the first borrower's URLA information",
+                                                    "argument_schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "borrower_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "URLA_Final.Borrower Name String"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "employer_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "URLA_Final.Borrower Employer Name String"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']"
+                                                }
+                                            ],
+                                            "return_type": "dict",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "selected_tax_form",
+                                                    "data_type": "dict",
+                                                    "description": "The Tax Form 1040 document from the list that matches computed_tax_year and the associated borrower/business details from URLA"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "2.b",
+                                        "description": "From the selected Tax Form 1040 document, extract the following financial fields: 'business_miles', 'net_profit_or_loss', 'other_income', 'depletion', 'depreciation', 'deductible_meals', and 'home_business_expenses'. Each field corresponds to its respective description as provided in the task.",
+                                        "inputs": [
+                                            "'selected_tax_form': output from subtask 2.a -> selected_tax_form"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'business_miles': Value extracted as <Business Miles> from the selected Tax Form 1040",
+                                            "'net_profit_or_loss': Value extracted as <Net profit or loss> from the selected Tax Form 1040",
+                                            "'other_income': Value extracted as <Other income> from the selected Tax Form 1040",
+                                            "'depletion': Value extracted as <Depletion> from the selected Tax Form 1040",
+                                            "'depreciation': Value extracted as <Depreciation> from the selected Tax Form 1040",
+                                            "'deductible_meals': Value extracted as <Deductible meals> from the selected Tax Form 1040",
+                                            "'home_business_expenses': Value extracted as <Expenses for business use of your home> from the selected Tax Form 1040"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_financial_fields",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "selected_tax_form",
+                                                    "data_type": "dict",
+                                                    "description": "The Tax Form 1040 document from the list that matches computed_tax_year and the associated borrower/business details from URLA",
+                                                    "argument_schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "borrower_first_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "Tax Form 1040.First Name and Initial String"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "borrower_last_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "Tax Form 1040.Last Name String"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "borrower_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "Custom field String"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "tax_year": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "ssn": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "Tax Form 1040.SSN String"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "address": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "city": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "value": {
+                                                                                "type": "string",
+                                                                                "description": "Tax Form 1040.City String"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "state": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "value": {
+                                                                                "type": "string",
+                                                                                "description": "Tax Form 1040.State String"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "zip": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "value": {
+                                                                                "type": "string",
+                                                                                "description": "Tax Form 1040.Zip String"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.a']['selected_tax_form']"
+                                                }
+                                            ],
+                                            "return_type": "dict",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "extract_financial_fields_output",
+                                                    "data_type": "dict",
+                                                    "description": "extracted financial fields output",
+                                                    "argument_schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "business_miles": {
+                                                                "data_type": "String",
+                                                                "description": "Value extracted as <Business Miles> from the selected Tax Form 1040"
+                                                            },
+                                                            "net_profit_or_loss": {
+                                                                "data_type": "String",
+                                                                "description": "Value extracted as <Net profit or loss> from the selected Tax Form 1040"
+                                                            },
+                                                            "other_income": {
+                                                                "data_type": "String",
+                                                                "description": "Value extracted as <Other income> from the selected Tax Form 1040"
+                                                            },
+                                                            "depletion": {
+                                                                "data_type": "String",
+                                                                "description": "Value extracted as <Depletion> from the selected Tax Form 1040"
+                                                            },
+                                                            "depreciation": {
+                                                                "data_type": "String",
+                                                                "description": "Value extracted as <Depreciation> from the selected Tax Form 1040"
+                                                            },
+                                                            "deductible_meals": {
+                                                                "data_type": "String",
+                                                                "description": "Value extracted as <Deductible meals> from the selected Tax Form 1040"
+                                                            },
+                                                            "home_business_expenses": {
+                                                                "data_type": "String",
+                                                                "description": "Value extracted as <Expenses for business use of your home> from the selected Tax Form 1040"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "assign_mileage_rate",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "Assign the mileage rate based on the computed_tax_year (computed as computed_application_year minus one). Use the following mapping: 2025 = 0.33, 2024 = 0.30, 2023 = 0.28, 2022 = 0.26, 2021 = 0.26, 2020 = 0.27, 2019 = 0.26, 2018 = 0.25, 2017 = 0.25, 2016 = 0.24, 2015 = 0.24, and 2014 = 0.22.",
+                                        "inputs": [
+                                            "'computed_application_year': output from extract_dates_and_years -> computed_application_year"
+                                        ],
+                                        "formulas": [
+                                            "computed_tax_year = int(computed_application_year) - 1",
+                                            "mileage_rate = assigned based on computed_tax_year using the provided mapping"
+                                        ],
+                                        "outputs": [
+                                            "'mileage_rate': The numeric mileage rate assigned as a float based on computed_tax_year"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "assign_mileage_rate_based_on_tax_year",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "Year extracted from application_date in YYYY format, output from extract_dates_and_years -> computed_application_year",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                }
+                                            ],
+                                            "return_type": "Float",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "mileage_rate",
+                                                    "data_type": "Float",
+                                                    "description": "The numeric mileage rate assigned based on computed_tax_year"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_vehicle_depreciation",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "4.a",
+                                        "description": "Calculate the vehicle depreciation value by multiplying business_miles by the mileage_rate.",
+                                        "inputs": [
+                                            "'business_miles': output from extract_document_and_data -> business_miles",
+                                            "'mileage_rate': output from assign_mileage_rate -> mileage_rate"
+                                        ],
+                                        "formulas": [
+                                            "vehicle_depreciation = business_miles * mileage_rate"
+                                        ],
+                                        "outputs": [
+                                            "'vehicle_depreciation': The calculated vehicle depreciation value"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_vehicle_depreciation_value",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "business_miles",
+                                                    "data_type": "String",
+                                                    "description": "Value extracted as <Business Miles> from the selected Tax Form 1040",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.b']['extract_financial_fields_output']['business_miles']"
+                                                },
+                                                {
+                                                    "argument_name": "mileage_rate",
+                                                    "data_type": "Float",
+                                                    "description": "The numeric mileage rate assigned based on computed_tax_year",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['assign_mileage_rate']['3.a']['mileage_rate']"
+                                                }
+                                            ],
+                                            "return_type": "Float",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "vehicle_depreciation",
+                                                    "data_type": "Float",
+                                                    "description": "The calculated vehicle depreciation value"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_monthly_average",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "5.a",
+                                        "description": "Compute the monthly average using the formula: (net_profit_or_loss - other_income + depletion + depreciation - deductible_meals + home_business_expenses + vehicle_depreciation) divided by 12.",
+                                        "inputs": [
+                                            "'net_profit_or_loss': output from extract_document_and_data -> net_profit_or_loss",
+                                            "'other_income': output from extract_document_and_data -> other_income",
+                                            "'depletion': output from extract_document_and_data -> depletion",
+                                            "'depreciation': output from extract_document_and_data -> depreciation",
+                                            "'deductible_meals': output from extract_document_and_data -> deductible_meals",
+                                            "'home_business_expenses': output from extract_document_and_data -> home_business_expenses",
+                                            "'vehicle_depreciation': output from calculate_vehicle_depreciation -> vehicle_depreciation"
+                                        ],
+                                        "formulas": [
+                                            "monthly_average = (net_profit_or_loss - other_income + depletion + depreciation - deductible_meals + home_business_expenses + vehicle_depreciation) / 12"
+                                        ],
+                                        "outputs": [
+                                            "'monthly_average': The computed monthly average value"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compute_monthly_average",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "net_profit_or_loss",
+                                                    "data_type": "String",
+                                                    "description": "Value extracted as <Net profit or loss> from the selected Tax Form 1040",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.b']['extract_financial_fields_output']['net_profit_or_loss']"
+                                                },
+                                                {
+                                                    "argument_name": "other_income",
+                                                    "data_type": "String",
+                                                    "description": "Value extracted as <Other income> from the selected Tax Form 1040",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.b']['extract_financial_fields_output']['other_income']"
+                                                },
+                                                {
+                                                    "argument_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "Value extracted as <Depletion> from the selected Tax Form 1040",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.b']['extract_financial_fields_output']['depletion']"
+                                                },
+                                                {
+                                                    "argument_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "Value extracted as <Depreciation> from the selected Tax Form 1040",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.b']['extract_financial_fields_output']['depreciation']"
+                                                },
+                                                {
+                                                    "argument_name": "deductible_meals",
+                                                    "data_type": "String",
+                                                    "description": "Value extracted as <Deductible meals> from the selected Tax Form 1040",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.b']['extract_financial_fields_output']['deductible_meals']"
+                                                },
+                                                {
+                                                    "argument_name": "home_business_expenses",
+                                                    "data_type": "String",
+                                                    "description": "Value extracted as <Expenses for business use of your home> from the selected Tax Form 1040",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.b']['extract_financial_fields_output']['home_business_expenses']"
+                                                },
+                                                {
+                                                    "argument_name": "vehicle_depreciation",
+                                                    "data_type": "Float",
+                                                    "description": "The calculated vehicle depreciation value from task 4.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['calculate_vehicle_depreciation']['4.a']['vehicle_depreciation']"
+                                                }
+                                            ],
+                                            "return_type": "Float",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_average",
+                                                    "data_type": "Float",
+                                                    "description": "The computed monthly average value"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "decision_flow",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "6.a",
+                                        "description": "Check whether another version of the document type 'Tax Form 1040SCHC' exists for the same borrower and business. This is done by examining the list of Tax Form 1040SCHC documents and comparing their borrower and business identifiers with those from the first borrower\u2019s URLA. If such a document is present, the process should immediately jump to the process 'SCH C Business \u2192 Trend Analysis'.",
+                                        "inputs": [
+                                            "'Tax_Form_1040SCHC': input_data -> Tax Form 1040SCHC (list)",
+                                            "'borrower_URLA': input_data -> borrowers -> first borrower -> URLA"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": "SCH C Business \u2192 Trend Analysis",
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_tax_form_1040schc_existence",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "tax_form_1040schc",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1040SCHC documents",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "borrower_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1040SCHC.taxForm1040SCHCNameofproprietor String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "business_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1040SCHC.taxForm1040SCHCBusinessname String"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['Tax Form 1040SCHC']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_urla",
+                                                    "data_type": "dict",
+                                                    "description": "First borrower's URLA details",
+                                                    "argument_schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "borrower_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "URLA_Final.Borrower Name String"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "employer_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "URLA_Final.Borrower Employer Name String"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[bool, bool]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "is_document_present",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether a matching Tax Form 1040SCHC document exists"
+                                                },
+                                                {
+                                                    "field_name": "skip_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the process 'SCH C Business \u2192 Trend Analysis'"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "6.b",
+                                        "description": "If no matching 'Tax Form 1040SCHC' document is found for the borrower and business, then continue to the next step by skipping to task 'Store and Validate Monthly Income'.",
+                                        "inputs": [],
+                                        "formulas": [],
+                                        "outputs": [],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": "store_and_validate_monthly_income",
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "continue_to_next_step",
+                                            "arguments": [],
+                                            "return_type": "bool",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the task 'Store and Validate Monthly Income'"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "store_and_validate_monthly_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "7.a",
+                                        "description": "Store the computed monthly average as monthly_income. Then, return the discrepancy message 'Only 1 year of Personal Tax Returns 1040's is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.' This step terminates both the HTP and the overall process.",
+                                        "inputs": [
+                                            "'monthly_average': output from calculate_monthly_average -> monthly_average"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'monthly_income': The stored monthly income value taken from monthly_average",
+                                            "'discrepancy_msg': 'Only 1 year of Personal Tax Returns 1040\\'s is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.'"
+                                        ],
+                                        "discrepancy_string": "Only 1 year of Personal Tax Returns 1040's is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "store_and_validate_monthly_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "monthly_average",
+                                                    "data_type": "Float",
+                                                    "description": "The computed monthly average value from subtask 5.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['htp_schedule_c_validation']['calculate_monthly_average']['5.a']['monthly_average']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_income",
+                                                    "data_type": "Float",
+                                                    "description": "The stored monthly income value taken from monthly_average"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message indicating the use of only 1 year of Personal Tax Returns 1040's"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the overall process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

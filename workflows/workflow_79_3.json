@@ -1,0 +1,434 @@
+[
+    {
+        "name": "rule_vvoe_validation_1120S",
+        "question": "Is the verbal verification of employment, VVOE present and complete with all the essential information ?",
+        "steps": [
+            {
+                "name": "step_vvoe_validation",
+                "fields": "Doc_type \"VVOE\"",
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].URLA",
+                    "borrowers[].VVOE",
+                    "other_doc_types.Tax Form 1120S"
+                ],
+                "expert_instructions": "1. Validate Monthly Income\n   IF (\"monthly_income (from output schema)\" < 0) THEN  \n      Return Discrepency Message: \"Monthly Income is negative; process terminated.\" and terminate the entire process  \n   ELSE  \n      Proceed to Step 2  \n\n2. Verify VVOE Presence\n   IF (doc_type \"VVOE\" is present) THEN  \n      Proceed to Step 3  \n   ELSE  \n      Return Discrepency Message: \"A verbal verification of employment, VVOE, was not obtained for self-employed business income.\" and terminate the process  \n\n3. Validate VVOE Fields\n   Extract from \"VVOE\":\n   - \"verifier_name\" as <Verifier Name>.\n   - \"verifier_title\" as <Verifier Title>.\n   - \"date\" as <Date>.\n   - \"source_of_phone_number\" as <Source of Phone number>.\n   IF (\"verifier_name\" is non-empty AND \"verifier_title\" is non-empty AND \"date\" is non-empty AND \"source_of_phone_number\" is non-empty) THEN  \n      Return Discrepency Message: \"Verbal verification of employment (VVOE) is complete with all required fields present.\" and terminate the process  \n   ELSE  \n      Return Discrepency Message: \"The verbal verification of employment, VVOE provided is missing one or more of the key information such as date, the source of the information, Verifier details etc.\" and terminate the process  ",
+                "discrepancy_messages": "2. A verbal verification of employment, VVOE, was not obtained for self-employed business income\n\n3.  The verbal verification of employment, VVOE provided is missing one or more of  the key information such as date , the source of the information, Verifier  details etc",
+                "doc_type_keys": [
+                    "borrowers[].VVOE",
+                    "borrowers[].URLA",
+                    "other_doc_types.Tax Form 1120S"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_vvoe_validation",
+                        "expert_instructions": "1. Validate Monthly Income\n   IF (\"monthly_income (from output schema)\" < 0) THEN  \n      Return Discrepency Message: \"Monthly Income is negative; process terminated.\" and terminate the entire process  \n   ELSE  \n      Proceed to Step 2  \n\n2. Verify VVOE Presence\n   IF (doc_type \"VVOE\" is present) THEN  \n      Proceed to Step 3  \n   ELSE  \n      Return Discrepency Message: \"A verbal verification of employment, VVOE, was not obtained for self-employed business income.\" and terminate the process  \n\n3. Validate VVOE Fields\n   Extract from \"VVOE\":\n   - \"verifier_name\" as <Verifier Name>.\n   - \"verifier_title\" as <Verifier Title>.\n   - \"date\" as <Date>.\n   - \"source_of_phone_number\" as <Source of Phone number>.\n   IF (\"verifier_name\" is non-empty AND \"verifier_title\" is non-empty AND \"date\" is non-empty AND \"source_of_phone_number\" is non-empty) THEN  \n      Return Discrepency Message: \"Verbal verification of employment (VVOE) is complete with all required fields present.\" and terminate the process  \n   ELSE  \n      Return Discrepency Message: \"The verbal verification of employment, VVOE provided is missing one or more of the key information such as date, the source of the information, Verifier details etc.\" and terminate the process  ",
+                        "discrepancy_messages": "2. A verbal verification of employment, VVOE, was not obtained for self-employed business income\n\n3.  The verbal verification of employment, VVOE provided is missing one or more of  the key information such as date , the source of the information, Verifier  details etc",
+                        "tasks": [
+                            {
+                                "task_name": "validate_monthly_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Extract the 'monthly_income' value from the output schema and convert it to a numeric value. Compare this value to 0. If the numeric monthly_income is less than 0, then return the discrepancy message 'Monthly Income is negative; process terminated.' and terminate the entire process. If the value is 0 or greater, then proceed with further validation.",
+                                        "inputs": [
+                                            "'monthly_income': Extract from output schema -> 'monthly_income' (expected to be a numeric string that will be converted to number)"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'monthly_income_numeric': Numeric value after conversion from the extracted monthly_income"
+                                        ],
+                                        "discrepancy_string": "Monthly Income is negative; process terminated.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_and_validate_monthly_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "monthly_income",
+                                                    "data_type": "String",
+                                                    "description": "Extracted from output schema -> 'monthly_income' (expected to be a numeric string that will be converted to number)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120s']['htp_extract_and_validate_1120s_data']['store_and_validate_monthly_income']['11.a']['monthly_income']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_income_numeric",
+                                                    "data_type": "Float",
+                                                    "description": "Numeric value after conversion from the extracted monthly_income"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Message indicating if the monthly income is negative"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "verify_vvoe_presence",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "Search for the presence of a VVOE document within the input data. Check if a VVOE document exists in the 'VVOE' array that is located under the 'borrowers' section. If the VVOE document is present, then proceed to the next task. If no VVOE document is found, return the discrepancy message and terminate the process. Ensure the below inputs are used for function arguments, do not use any other arguments",
+                                        "inputs": [
+                                            "'VVOE': Extract from input_data -> 'borrowers' (list) -> each borrower -> 'VVOE' (list of objects). Use the first VVOE document if available."
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'vvoe_exists': Boolean flag (true if at least one VVOE document is present, false otherwise)"
+                                        ],
+                                        "discrepancy_string": "A verbal verification of employment, VVOE, was not obtained for self-employed business income",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_vvoe_document_presence",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "borrowers",
+                                                    "data_type": "List[dict]",
+                                                    "description": "Extract from input_data -> 'borrowers' (list) -> each borrower -> 'VVOE' (list of objects). Use the first VVOE document if available.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "VVOE": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "loan_number": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Loan Number String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "borrower_name": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Borrower Name String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "borrower_title": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Job Title String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "employer_name": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Employer Name String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "employer_contact_name": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Employer Contact Name String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "employer_contact_number": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Phone number String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "source_employer_contact_number": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Source of Phone number String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "employer_title": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Employer Contact  Title String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "is_borrower_currently_employed": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Borrower Currently Employed String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "verifier_name": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Verifier Name String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "verifier_title": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "VVOE.Verifier Title String"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "date_verified": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "dates_of_employment": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "start_date": {
+                                                                                        "type": "string",
+                                                                                        "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY"
+                                                                                    },
+                                                                                    "end_date": {
+                                                                                        "type": "string",
+                                                                                        "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, String, Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "vvoe_exists",
+                                                    "data_type": "Boolean",
+                                                    "description": "Boolean flag (true if at least one VVOE document is present, false otherwise)"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "A verbal verification of employment, VVOE, was not obtained for self-employed business income"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_vvoe_fields",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "Extract the required fields from the first VVOE document. The required fields include 'verifier_name', 'verifier_title', 'date', and 'source_of_phone_number'. Traverse the input data by accessing the first element of the 'VVOE' list under 'borrowers'. Specifically, extract 'verifier_name' from 'VVOE' -> 'verifier_name' -> 'value', 'verifier_title' from 'VVOE' -> 'verifier_title' -> 'value', 'date' from 'VVOE' -> 'date_verified' -> 'value', and 'source_of_phone_number' from 'VVOE' -> 'source_employer_contact_number' -> 'value'. Then, check if any of these extracted fields is empty or null. If any field is empty, return the discrepancy message indicating that one or more required VVOE fields are missing and terminate the process.Ensure the below inputs are used for function arguments, do not use any other arguments",
+                                        "inputs": [
+                                            "'verifier_name': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'verifier_name' -> 'value'",
+                                            "'verifier_title': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'verifier_title' -> 'value'",
+                                            "'date': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'date_verified' -> 'value'",
+                                            "'source_of_phone_number': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'source_employer_contact_number' -> 'value'"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'vvoe_validation_result': A string message indicating that required VVOE fields are missing"
+                                        ],
+                                        "discrepancy_string": "The verbal verification of employment, VVOE provided is missing one or more of the key information such as date, the source of the information, Verifier details etc",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_and_validate_vvoe_fields",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "verifier_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted verifier name from the first VVOE document.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['verifier_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "verifier_title",
+                                                    "data_type": "String",
+                                                    "description": "Extracted verifier title from the first VVOE document.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['verifier_title']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Extracted date from the first VVOE document. Valid formats: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['date_verified']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "source_of_phone_number",
+                                                    "data_type": "String",
+                                                    "description": "Extracted source of phone number from the first VVOE document.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['source_employer_contact_number']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The verbal verification of employment, VVOE provided is missing one or more of the key information such as date, the source of the information, Verifier details etc"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "3.b",
+                                        "description": "After extracting the required fields from the first VVOE document, verify that all fields ('verifier_name', 'verifier_title', 'date', and 'source_of_phone_number') are non-empty. If all fields contain valid data, then return a message indicating that the verbal verification of employment (VVOE) is complete with all required fields present and then terminate the process. Ensure the below inputs are used for function arguments, do not use any other arguments",
+                                        "inputs": [
+                                            "'verifier_name': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'verifier_name' -> 'value'",
+                                            "'verifier_title': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'verifier_title' -> 'value'",
+                                            "'date': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'date_verified' -> 'value'",
+                                            "'source_of_phone_number': input_data -> borrowers (list) -> first borrower -> 'VVOE' (list) -> first item -> 'source_employer_contact_number' -> 'value'"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'vvoe_complete_msg': Message indicating that VVOE is complete with all required fields present"
+                                        ],
+                                        "discrepancy_string": "Verbal verification of employment (VVOE) is complete with all required fields present.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "verify_vvoe_fields_complete",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "verifier_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted verifier name from the first VVOE document.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['verifier_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "verifier_title",
+                                                    "data_type": "String",
+                                                    "description": "Extracted verifier title from the first VVOE document.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['verifier_title']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Extracted date from the first VVOE document. Valid formats: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['date_verified']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "source_of_phone_number",
+                                                    "data_type": "String",
+                                                    "description": "Extracted source of phone number from the first VVOE document.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['source_employer_contact_number']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "vvoe_complete_msg",
+                                                    "data_type": "String",
+                                                    "description": "Verbal verification of employment (VVOE) is complete with all required fields present."
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

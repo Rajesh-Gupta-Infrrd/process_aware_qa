@@ -1,0 +1,514 @@
+[
+    {
+        "name": "rule_business_liquidity_requirement_1120S",
+        "question": "Is Business Liquidity requirement meet?",
+        "steps": [
+            {
+                "name": "step_validate_business_liquidity",
+                "fields": null,
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].URLA",
+                    "other_doc_types.Tax Form 1120S"
+                ],
+                "expert_instructions": "1. Extract Dates and Computed Year\nAction:\nFrom the application_date, extract application_year in the form {computed_application_year}.\nSet computed_application_year = year(application_date), denoted as YYYY.\n\n\n2. Validate Monthly Income\n   IF (\"monthly_income (computed earlier and available as a calculated field)\" < 0 or \"monthly_income\" not present) THEN  \n      Return Discrepency Message: \"Monthly Income is negative; process terminated.\" and terminate the entire process  \n   ELSE  \n      Proceed to Step 2 \n\n3. Check Applicable Document Types\n   IF (From List of Tax Form 1120S, pick the one for the year ({computed_application_year}-1)\n      Proceed to Step 3  \n   ELSE  \n      Return Discrepency Message: \"No applicable tax form (1120S) present; skipping liquidity analysis.\" and terminate the process  \n\n4. Extract Schedule L Data\n      From List of Tax Form 1120S, pick the one for the year ({computed_application_year}-1)\n   Extract from the selected tax form:\n   - \"schedule_l_cash\" as <Schedule L Cash>.\n   - \"schedule_l_accounts_receivable\" as <Schedule L Accounts receivable>.\n   - \"schedule_l_us_gov_obligations\" as <Schedule L U.S. government obligations>.\n   - \"schedule_l_tax_exempt_securities\" as <Schedule L Tax-exempt securities>.\n   - \"schedule_l_other_current_assets\" as <Schedule L Other current assets>.\n   - \"schedule_l_inventory\" as <Schedule L Inventory>.\n   - \"schedule_l_accounts_payable\" as <Schedule L Accounts payable>.\n   - \"schedule_l_short_term_debt\" as <Schedule L Mortgages, notes, bonds payable in less than 1 year>.\n   - \"schedule_l_other_current_liabilities\" as <Schedule L Other current liabilities>.\n\n5. Calculate Liquidity Metrics\n   Compute: \"assets_excluding_inventory\" = \"schedule_l_cash\" + \"schedule_l_accounts_receivable\" + \"schedule_l_us_gov_obligations\" + \"schedule_l_tax_exempt_securities\" + \"schedule_l_other_current_assets\"\n   Compute: \"assets_including_inventory\" = \"assets_excluding_inventory\" + \"schedule_l_inventory\"\n   Compute: \"total_current_liabilities\" = \"schedule_l_accounts_payable\" + \"schedule_l_short_term_debt\" + \"schedule_l_other_current_liabilities\"\n   Compute: \"quick_ratio\" = \"assets_excluding_inventory\" / \"total_current_liabilities\"\n   Compute: \"current_ratio\" = \"assets_including_inventory\" / \"total_current_liabilities\"\n\n6. Validate Liquidity Ratios\n   IF (\"quick_ratio\" < 1 AND \"current_ratio\" < 1) THEN  \n      Return Discrepency Message: \"The business does not demonstrate adequate business liquidity to support the withdrawal of earnings.\" and terminate the process  \n   ELSE IF (\"quick_ratio\" \u2265 1 OR \"current_ratio\" \u2265 1) THEN  \n      Return Discrepency Message: \"The business demonstrates adequate business liquidity to support the withdrawal of earnings.\" and terminate the process  \n   ELSE  \n      Return Discrepency Message: \"None of the conditions passed for the rule 'Is business liquidity adequate for withdrawal of earnings?'\" and terminate the process ",
+                "discrepancy_messages": "5. a. The business does not demonstrate adequate business liquidity to support the withdrawal of earnings.\n\n5 .b. The business demonstrates adequate business liquidity to support the withdrawal of earnings.",
+                "doc_type_keys": [
+                    "borrowers[].URLA",
+                    "other_doc_types.Tax Form 1120S"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_validate_business_liquidity",
+                        "expert_instructions": "1. Extract Dates and Computed Year\nAction:\nFrom the application_date, extract application_year in the form {computed_application_year}.\nSet computed_application_year = year(application_date), denoted as YYYY.\n\n\n2. Validate Monthly Income\n   IF (\"monthly_income (computed earlier and available as a calculated field)\" < 0 or \"monthly_income\" not present) THEN  \n      Return Discrepency Message: \"Monthly Income is negative; process terminated.\" and terminate the entire process  \n   ELSE  \n      Proceed to Step 2 \n\n3. Check Applicable Document Types\n   IF (From List of Tax Form 1120S, pick the one for the year ({computed_application_year}-1)\n      Proceed to Step 3  \n   ELSE  \n      Return Discrepency Message: \"No applicable tax form (1120S) present; skipping liquidity analysis.\" and terminate the process  \n\n4. Extract Schedule L Data\n      From List of Tax Form 1120S, pick the one for the year ({computed_application_year}-1)\n   Extract from the selected tax form:\n   - \"schedule_l_cash\" as <Schedule L Cash>.\n   - \"schedule_l_accounts_receivable\" as <Schedule L Accounts receivable>.\n   - \"schedule_l_us_gov_obligations\" as <Schedule L U.S. government obligations>.\n   - \"schedule_l_tax_exempt_securities\" as <Schedule L Tax-exempt securities>.\n   - \"schedule_l_other_current_assets\" as <Schedule L Other current assets>.\n   - \"schedule_l_inventory\" as <Schedule L Inventory>.\n   - \"schedule_l_accounts_payable\" as <Schedule L Accounts payable>.\n   - \"schedule_l_short_term_debt\" as <Schedule L Mortgages, notes, bonds payable in less than 1 year>.\n   - \"schedule_l_other_current_liabilities\" as <Schedule L Other current liabilities>.\n\n5. Calculate Liquidity Metrics\n   Compute: \"assets_excluding_inventory\" = \"schedule_l_cash\" + \"schedule_l_accounts_receivable\" + \"schedule_l_us_gov_obligations\" + \"schedule_l_tax_exempt_securities\" + \"schedule_l_other_current_assets\"\n   Compute: \"assets_including_inventory\" = \"assets_excluding_inventory\" + \"schedule_l_inventory\"\n   Compute: \"total_current_liabilities\" = \"schedule_l_accounts_payable\" + \"schedule_l_short_term_debt\" + \"schedule_l_other_current_liabilities\"\n   Compute: \"quick_ratio\" = \"assets_excluding_inventory\" / \"total_current_liabilities\"\n   Compute: \"current_ratio\" = \"assets_including_inventory\" / \"total_current_liabilities\"\n\n6. Validate Liquidity Ratios\n   IF (\"quick_ratio\" < 1 AND \"current_ratio\" < 1) THEN  \n      Return Discrepency Message: \"The business does not demonstrate adequate business liquidity to support the withdrawal of earnings.\" and terminate the process  \n   ELSE IF (\"quick_ratio\" \u2265 1 OR \"current_ratio\" \u2265 1) THEN  \n      Return Discrepency Message: \"The business demonstrates adequate business liquidity to support the withdrawal of earnings.\" and terminate the process  \n   ELSE  \n      Return Discrepency Message: \"None of the conditions passed for the rule 'Is business liquidity adequate for withdrawal of earnings?'\" and terminate the process ",
+                        "discrepancy_messages": "5. a. The business does not demonstrate adequate business liquidity to support the withdrawal of earnings.\n\n5 .b. The business demonstrates adequate business liquidity to support the withdrawal of earnings.",
+                        "tasks": [
+                            {
+                                "task_name": "extract_dates_and_computed_year",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Extract the application_date from the root input. Parse the date string (formats: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY) and extract the year component in the YYYY format. Assign the result to computed_application_year.",
+                                        "inputs": [
+                                            "'application_date': input_data -> application_date -> value (a date string in one of the acceptable formats)"
+                                        ],
+                                        "formulas": [
+                                            "computed_application_year = year(application_date)"
+                                        ],
+                                        "outputs": [
+                                            "'computed_application_year': The year (YYYY) extracted from the application_date"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_application_year",
+                                            "function_description": "Extracts the year from the application_date string in the format MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY and returns it as computed_application_year.",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "application_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['application_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year (YYYY) extracted from the application_date"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_monthly_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "Validate the monthly_income value. Retrieve the monthly_income (assumed to be a previously computed field) from the input data by traversing to the first borrower's URLA -> gross_monthly_income -> total -> value. Check if the field is present and if its numeric value is less than 0. If monthly_income is missing or less than 0, return the discrepancy message 'Monthly Income is negative; process terminated.' and terminate the entire process. Otherwise, mark the income as validated.",
+                                        "inputs": [
+                                            "'monthly_income': input_data -> borrowers -> first borrower -> URLA -> gross_monthly_income -> total -> value (a string representing currency that needs to be converted to a numeric value)"
+                                        ],
+                                        "formulas": [
+                                            "if monthly_income is null or float(monthly_income) < 0 then validation fails"
+                                        ],
+                                        "outputs": [
+                                            "'monthly_income_validated': A Boolean indicating if the monthly income is valid (true if valid)"
+                                        ],
+                                        "discrepancy_string": "Monthly Income is negative; process terminated.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_monthly_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "monthly_income",
+                                                    "data_type": "String",
+                                                    "description": "monthly income calculated value",
+                                                    "argument_schema": null,
+                                                    "data_access_str":"output_data['rule_self_employment_cash_flow_analysis_1120s']['htp_extract_and_validate_1120s_data']['store_and_validate_monthly_income']['11.a']['monthly_income']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, String, Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_income_validated",
+                                                    "data_type": "Boolean",
+                                                    "description": "A Boolean indicating if the monthly income is valid (true if valid)"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if the monthly income is negative or missing"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "check_applicable_document_types",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "From the list of Tax Form 1120S documents under other_doc_types, select the tax form where the tax_year equals (computed_application_year - 1). First, compute the expected tax year by subtracting 1 from computed_application_year. Then, iterate over the list to find a form where the tax_year (found at other_doc_types -> Tax Form 1120S -> each item's tax_year -> value) matches the computed value. If such a tax form is found, assign it as the selected_tax_form. If no match is found, return the discrepancy message 'No applicable tax form (1120S) present; skipping liquidity analysis.' and terminate the process.",
+                                        "inputs": [
+                                            "'computed_application_year': output from Task 1 (the extracted year in YYYY format)",
+                                            "'tax_forms': input_data -> other_doc_types -> Tax Form 1120S (an array of Tax Form 1120S documents)"
+                                        ],
+                                        "formulas": [
+                                            "expected_tax_year = int(computed_application_year) - 1",
+                                            "selected_tax_form = the tax form document where tax_form.tax_year.value equals expected_tax_year"
+                                        ],
+                                        "outputs": [
+                                            "'selected_tax_form': The Tax Form 1120S document that matches the required year (computed_application_year - 1)"
+                                        ],
+                                        "discrepancy_string": "No applicable tax form (1120S) present; skipping liquidity analysis.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_tax_form_1120S",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year (YYYY) extracted from the application_date. Output from Task 1.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_dates_and_computed_year']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_forms",
+                                                    "data_type": "List[dict]",
+                                                    "description": "An array of Tax Form 1120S documents from input_data -> other_doc_types -> Tax Form 1120S.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Optional[dict], Optional[str], bool]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "selected_tax_form",
+                                                    "data_type": "Optional[dict]",
+                                                    "description": "The Tax Form 1120S document that matches the required year (computed_application_year - 1) or None if not found."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "Optional[str]",
+                                                    "description": "Discrepancy message if no applicable tax form is found."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "extract_schedule_l_data",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "4.a",
+                                        "description": "Extract Schedule L data from the selected tax form document (obtained from Task 3). From the selected_tax_form, retrieve the following fields using the specified traversal paths:\n- schedule_l_cash from selected_tax_form -> schedule_l_cash_end_of_tax_year -> value\n- schedule_l_accounts_receivable from selected_tax_form -> schedule_l_accounts_receivable_end_of_tax_year -> value\n- schedule_l_us_gov_obligations from selected_tax_form -> schedule_l_us_government_obligations_end_of_tax_year -> value\n- schedule_l_tax_exempt_securities from selected_tax_form -> schedule_l_tax_exempt_securities_end_of_tax_year -> value\n- schedule_l_other_current_assets from selected_tax_form -> schedule_l_other_current_assets_end_of_tax_year -> value\n- schedule_l_inventory from selected_tax_form -> schedule_l_inventory_end_of_tax_year -> value\n- schedule_l_accounts_payable from selected_tax_form -> schedule_l_accounts_payable_end_of_tax_year -> value\n- schedule_l_short_term_debt from selected_tax_form -> schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year -> value\n- schedule_l_other_current_liabilities from selected_tax_form -> schedule_l_other_current_liabilities_end_of_tax_year -> value",
+                                        "inputs": [
+                                            "'selected_tax_form': output from Task 3 representing the relevant Tax Form 1120S document"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'schedule_l_cash': Extracted value of Schedule L Cash",
+                                            "'schedule_l_accounts_receivable': Extracted value of Schedule L Accounts Receivable",
+                                            "'schedule_l_us_gov_obligations': Extracted value of Schedule L U.S. Government Obligations",
+                                            "'schedule_l_tax_exempt_securities': Extracted value of Schedule L Tax-exempt Securities",
+                                            "'schedule_l_other_current_assets': Extracted value of Schedule L Other Current Assets",
+                                            "'schedule_l_inventory': Extracted value of Schedule L Inventory",
+                                            "'schedule_l_accounts_payable': Extracted value of Schedule L Accounts Payable",
+                                            "'schedule_l_short_term_debt': Extracted value of Schedule L Mortgages, notes, bonds payable in less than 1 year",
+                                            "'schedule_l_other_current_liabilities': Extracted value of Schedule L Other Current Liabilities"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_schedule_l_data",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "selected_tax_form",
+                                                    "data_type": "Optional[dict]",
+                                                    "description": "The Tax Form 1120S document that matches the required year (computed_application_year - 1) or None if not found.",
+                                                    "argument_schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "tax_year": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "Tax Form 1120S.taxForm1120STaxYear String (Year)"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "partnership_name": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "value": {
+                                                                        "type": "string",
+                                                                        "description": "Tax Form 1120S.taxForm1120SNameofPartnership String"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['check_applicable_document_types']['3.a']['selected_tax_form']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "schedule_l_cash",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Cash"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_accounts_receivable",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Accounts Receivable"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_us_gov_obligations",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L U.S. Government Obligations"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_tax_exempt_securities",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Tax-exempt Securities"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_other_current_assets",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Other Current Assets"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_inventory",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Inventory"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_accounts_payable",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Accounts Payable"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Mortgages, notes, bonds payable in less than 1 year"
+                                                },
+                                                {
+                                                    "field_name": "schedule_l_other_current_liabilities",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Other Current Liabilities"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_liquidity_metrics",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "5.a",
+                                        "description": "Calculate liquidity metrics using the Schedule L values extracted in Task 4. First, convert all extracted string currency values to numeric values as necessary. Then compute the following:\n1. assets_excluding_inventory = schedule_l_cash + schedule_l_accounts_receivable + schedule_l_us_gov_obligations + schedule_l_tax_exempt_securities + schedule_l_other_current_assets\n2. assets_including_inventory = assets_excluding_inventory + schedule_l_inventory\n3. total_current_liabilities = schedule_l_accounts_payable + schedule_l_short_term_debt + schedule_l_other_current_liabilities\n4. quick_ratio = assets_excluding_inventory / total_current_liabilities\n5. current_ratio = assets_including_inventory / total_current_liabilities",
+                                        "inputs": [
+                                            "'schedule_l_cash': output from Task 4 -> schedule_l_cash",
+                                            "'schedule_l_accounts_receivable': output from Task 4 -> schedule_l_accounts_receivable",
+                                            "'schedule_l_us_gov_obligations': output from Task 4 -> schedule_l_us_gov_obligations",
+                                            "'schedule_l_tax_exempt_securities': output from Task 4 -> schedule_l_tax_exempt_securities",
+                                            "'schedule_l_other_current_assets': output from Task 4 -> schedule_l_other_current_assets",
+                                            "'schedule_l_inventory': output from Task 4 -> schedule_l_inventory",
+                                            "'schedule_l_accounts_payable': output from Task 4 -> schedule_l_accounts_payable",
+                                            "'schedule_l_short_term_debt': output from Task 4 -> schedule_l_short_term_debt",
+                                            "'schedule_l_other_current_liabilities': output from Task 4 -> schedule_l_other_current_liabilities"
+                                        ],
+                                        "formulas": [
+                                            "assets_excluding_inventory = schedule_l_cash + schedule_l_accounts_receivable + schedule_l_us_gov_obligations + schedule_l_tax_exempt_securities + schedule_l_other_current_assets",
+                                            "assets_including_inventory = assets_excluding_inventory + schedule_l_inventory",
+                                            "total_current_liabilities = schedule_l_accounts_payable + schedule_l_short_term_debt + schedule_l_other_current_liabilities",
+                                            "quick_ratio = assets_excluding_inventory / total_current_liabilities",
+                                            "current_ratio = assets_including_inventory / total_current_liabilities"
+                                        ],
+                                        "outputs": [
+                                            "'assets_excluding_inventory': Sum of assets excluding inventory",
+                                            "'assets_including_inventory': Sum of assets including inventory",
+                                            "'total_current_liabilities': Total calculated current liabilities",
+                                            "'quick_ratio': The computed quick ratio",
+                                            "'current_ratio': The computed current ratio"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_liquidity_metrics",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "schedule_l_cash",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Cash from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_cash']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_accounts_receivable",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Accounts Receivable from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_accounts_receivable']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_us_gov_obligations",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L U.S. Government Obligations from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_us_gov_obligations']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_tax_exempt_securities",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Tax-exempt Securities from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_tax_exempt_securities']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_other_current_assets",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Other Current Assets from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_other_current_assets']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_inventory",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Inventory from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_inventory']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_accounts_payable",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Accounts Payable from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_accounts_payable']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Mortgages, notes, bonds payable in less than 1 year from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_short_term_debt']"
+                                                },
+                                                {
+                                                    "argument_name": "schedule_l_other_current_liabilities",
+                                                    "data_type": "String",
+                                                    "description": "Extracted value of Schedule L Other Current Liabilities from Task 4",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['extract_schedule_l_data']['4.a']['schedule_l_other_current_liabilities']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "assets_excluding_inventory",
+                                                    "data_type": "Float",
+                                                    "description": "Sum of assets excluding inventory"
+                                                },
+                                                {
+                                                    "field_name": "assets_including_inventory",
+                                                    "data_type": "Float",
+                                                    "description": "Sum of assets including inventory"
+                                                },
+                                                {
+                                                    "field_name": "total_current_liabilities",
+                                                    "data_type": "Float",
+                                                    "description": "Total calculated current liabilities"
+                                                },
+                                                {
+                                                    "field_name": "quick_ratio",
+                                                    "data_type": "Float",
+                                                    "description": "The computed quick ratio"
+                                                },
+                                                {
+                                                    "field_name": "current_ratio",
+                                                    "data_type": "Float",
+                                                    "description": "The computed current ratio"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_liquidity_ratios",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "6.a",
+                                        "description": "Validate the liquidity ratios using the computed quick_ratio and current_ratio from Task 5. Perform the following checks:\n- If quick_ratio < 1 AND current_ratio < 1 then return the discrepancy message 'The business does not demonstrate adequate business liquidity to support the withdrawal of earnings.' and terminate the process.\n- Else if quick_ratio \u2265 1 OR current_ratio \u2265 1 then return the discrepancy message 'The business demonstrates adequate business liquidity to support the withdrawal of earnings.' and terminate the process.\n- Otherwise, if none of the above conditions are met, return the discrepancy message 'None of the conditions passed for the rule \"Is business liquidity adequate for withdrawal of earnings?\"' and terminate the process.",
+                                        "inputs": [
+                                            "'quick_ratio': output from Task 5 -> quick_ratio",
+                                            "'current_ratio': output from Task 5 -> current_ratio"
+                                        ],
+                                        "formulas": [
+                                            "if (quick_ratio < 1 and current_ratio < 1) then condition1",
+                                            "else if (quick_ratio >= 1 or current_ratio >= 1) then condition2",
+                                            "else condition3"
+                                        ],
+                                        "outputs": [
+                                            "'discrepancy_msg': A string containing the relevant discrepancy message based on the evaluation of liquidity ratios"
+                                        ],
+                                        "discrepancy_string": "Either 'The business does not demonstrate adequate business liquidity to support the withdrawal of earnings.' or 'The business demonstrates adequate business liquidity to support the withdrawal of earnings.' or 'None of the conditions passed for the rule \"Is business liquidity adequate for withdrawal of earnings?\"'",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_liquidity_ratios",
+                                            "function_description": "Validates the liquidity ratios using the computed quick_ratio and current_ratio from Task 5. Performs checks to determine if the business demonstrates adequate liquidity to support the withdrawal of earnings.",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "quick_ratio",
+                                                    "data_type": "Float",
+                                                    "description": "The computed quick ratio from Task 5.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['calculate_liquidity_metrics']['5.a']['quick_ratio']"
+                                                },
+                                                {
+                                                    "argument_name": "current_ratio",
+                                                    "data_type": "Float",
+                                                    "description": "The computed current ratio from Task 5.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_business_liquidity_requirement_1120S']['htp_validate_business_liquidity']['calculate_liquidity_metrics']['5.a']['current_ratio']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "A string containing the relevant discrepancy message based on the evaluation of liquidity ratios."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

@@ -1,0 +1,95 @@
+[
+    {
+        "name": "rule_verbal_verification_of_employment_validation",
+        "question": "Is the verbal verification of employment, VVOE within 120 days of the closing date ?",
+        "steps": [
+            {
+                "name": "step_vvoe_date_validation",
+                "fields": "Doc_type \"VVOE\"",
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].VVOE"
+                ],
+                "expert_instructions": "1. If the below criteria is meet, then proceed ahead, else return the discrepancy message\n  \u25d8  Use the extracted value of \"Date\" from doc_type \"VVOE\" <VVOE.Date>\n  \u25d8 From the latest version of the doc_type \"Closing Disclosure\", extract the field \"Closing Date\". <ClosingDisclosure.Closing Date>\n  \u25d8 Use Date from VVOE and the field Closing date, then perform check <Closing Date> -120  \u2264  <VVOE.Date>;",
+                "discrepancy_messages": "1. A verbal verification of employment, VVOE was not dated within 120 calendar days of the note date for self-employed business income",
+                "doc_type_keys": [
+                    "borrowers[].VVOE"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_vvoe_date_validation",
+                        "expert_instructions": "1. If the below criteria is meet, then proceed ahead, else return the discrepancy message\n  \u25d8  Use the extracted value of \"Date\" from doc_type \"VVOE\" <VVOE.Date>\n  \u25d8 From the latest version of the doc_type \"Closing Disclosure\", extract the field \"Closing Date\". <ClosingDisclosure.Closing Date>\n  \u25d8 Use Date from VVOE and the field Closing date, then perform check <Closing Date> -120  \u2264  <VVOE.Date>;",
+                        "discrepancy_messages": "1. A verbal verification of employment, VVOE was not dated within 120 calendar days of the note date for self-employed business income",
+                        "tasks": [
+                            {
+                                "task_name": "validate_vvoe_date_with_closing_date",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Given the 'Date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)  from the VVOE document and the 'Closing Date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)  from the Closing Disclosure document, perform the date comparison. Convert both extracted date strings to a standardized date format (ensuring consistency in MM/DD/YYYY, MM-DD-YYYY or MM.DD.YYYY as applicable). Calculate an adjusted date by subtracting 120 calendar days from the Closing Date. Then, check if (Closing Date - 120 days) is less than or equal to the extracted VVOE date. If the condition is not met, return the specified discrepancy message; otherwise, indicate that the validation passed.",
+                                        "inputs": [
+                                            "'VVOE_Date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY) : input_data -> borrowers (list) -> first borrower -> VVOE (list) -> first item -> date_verified -> value",
+                                            "'closing_Date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY) : input_data -> closing_date -> value"
+                                        ],
+                                        "formulas": [
+                                            "adjusted_closing_date = closing_date - 120 days (convert closing_date to date format and subtract 120 days)",
+                                            "validation_condition = (adjusted_closing_date <= VVOE_date)"
+                                        ],
+                                        "outputs": [
+                                            "'validation_result': Boolean value indicating whether the condition (Closing Date - 120 days <= VVOE Date) is met",
+                                            "'discrepancy_msg': If the condition is not met, return 'A verbal verification of employment, VVOE was not dated within 120 calendar days of the note date for self-employed business income', otherwise return an empty string"
+                                        ],
+                                        "discrepancy_string": "A verbal verification of employment, VVOE was not dated within 120 calendar days of the note date for self-employed business income",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_vvoe_date_with_closing_date",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "vvoe_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Date from the VVOE document in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['date_verified']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "closing_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Closing Date from the Closing Disclosure document in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['closing_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "validation_result",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether the condition (Closing Date - 120 days <= VVOE Date) is met"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if the condition is not met, otherwise an empty string"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

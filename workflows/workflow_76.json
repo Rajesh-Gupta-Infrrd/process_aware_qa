@@ -1,0 +1,1020 @@
+[
+  {
+    "name": "rule_self_employment_cash_flow_analysis",
+    "question": "Is the trend of self employment cash flow analysis of 1120S business reflect consistent earnings?",
+    "steps": [
+      {
+        "name": "step_extract_and_validate_1120s_data",
+        "fields": null,
+        "split_cell": false,
+        "schema_keys": [
+          "other_doc_types.Tax Form 1120S",
+          "borrowers[].Tax Form 1120SSCHK1",
+          "borrowers[].URLA"
+        ],
+        "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}. \n\n2. Extract Document and Validate Consistency\n   From List of Tax Form 1120SSCHK1, pick the one for the year ({computed_application_year}-1) and extract:\n   - \"schk1_tax_year\" as <Tax Form 1120SSCHK1.Tax Year> in the form YYYY.\n   - \"schk1_business_name\" as <Tax Form 1120SSCHK1.BusinessName>.\n   - \"schk1_borrower_name\" as <Tax Form 1120SSCHK1.BorrowerName>.\n   - \"ordinary_business_income\" as <Ordinary business income>.\n   - \"net_rental_real_estate_income\" as <Net rental real estate income>.\n   - \"other_net_rental_income\" as <Other net rental income>.\n   Validate:\n   - \"schk1_tax_year\" = <Tax Form 1120S.Tax Year>.\n   - \"schk1_business_name\" = <Tax Form 1120S.BusinessName> = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"schk1_borrower_name\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name> OR <\"Name\" present under \"ALIASES\" column for the borrower in IDP+>.\n\n3. Calculate and Select K-1 Income\n   From Tax Form 1120SSCHK1, extract \"k1_distributions\" as the amount from <Items affecting shareholder basis> where Description = 'D'.\n   Compute: \"k1_income\" = \"ordinary_business_income\" + \"net_rental_real_estate_income\" + \"other_net_rental_income\"\n   IF (\"k1_income\" < \"k1_distributions\" AND \"k1_income\" < 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\"  \n   ELSE IF (\"k1_income\" > \"k1_distributions\" AND \"k1_distributions\" != 0) THEN  \n      Store \"k1_distributions\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE IF (\"k1_distributions\" == 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE  \n      Store \"k1_income\" as \"selected_k1_value\"\n\n4. Extract Tax Form 1120S Data\n   From List of Tax Form 1120S, pick the one for the year ({computed_application_year}-1) and extract:\n   - \"1120s_tax_year\" as <Tax Form 1120S.Tax Year> = \"schk1_tax_year\".\n   - \"1120s_business_name\" as <Tax Form 1120S.BusinessName> = \"schk1_business_name\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   Extract:\n   - \"ordinary_income_loss\" as <Ordinary income loss>.\n   - \"nonrecurring_other_income\" as <Nonrecurring Other Income>.\n   - \"depreciation\" as <Depreciation>.\n   - \"depletion\" as <Depletion>.\n   - \"short_term_debt\" as <Mortgage, Notes, Bonds payable < 1 Year>.\n   - \"travel_entertainment\" as <Travel & Entertainment Expenses>.\n   - \"ending_capital\" as <Ending Capital>.\n\n5. Calculate Business Income\n   Compute: \"subtotal_business_income\" = \"ordinary_income_loss\" - \"nonrecurring_other_income\" + \"depreciation\" + \"depletion\" - \"short_term_debt\" - \"travel_entertainment\"\n   Compute: \"borrower_share_business_income\" = (\"ending_capital\" / 100) * \"subtotal_business_income\"\n\n6. Calculate Prior Year Monthly Average\n   Compute: \"<schk1_tax_year-1>.monthly_average\" = (\"borrower_share_business_income\" + \"selected_k1_value\") / 12\n   Store as \"prior_year_monthly_avg\".\n\n7. Compare Monthly Averages\n   Assume \"tax_year_monthly_avg\" is provided from the latest \"Tax Form 1120SSCHK1\" for \"schk1_tax_year\".\n   Compute: \"comparison_percentage\" = ((\"tax_year_monthly_avg\" - \"prior_year_monthly_avg\") / \"prior_year_monthly_avg\") * 100\n\n8. Calculate and Validate Monthly Income\n   IF (\"comparison_percentage\" \u2265 0) THEN  \n      Compute: \"monthly_income\" = (\"tax_year_monthly_avg\" + \"prior_year_monthly_avg\") / 2  \n   ELSE  \n      Store: \"monthly_income\" = \"tax_year_monthly_avg\"\n   IF (\"comparison_percentage\" > 30) THEN  \n      Return Discrepency Message: \"A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" \u2265 0 AND \"comparison_percentage\" \u2264 30) THEN  \n      Return Discrepency Message: \"The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" < 0 AND \"comparison_percentage\" \u2265 -30) THEN  \n      Return Discrepency Message: \"A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\" and terminate the process  \n   ELSE   \n      Return Discrepency Message: \"A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.\" and terminate the process  ",
+        "discrepancy_messages": "\n2. e. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n2. f  In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n9. A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability. \n10. The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\n11. A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\n12. A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+        "doc_type_keys": [
+          "borrowers[].Tax Form 1120SSCHK1",
+          "other_doc_types.Tax Form 1120S",
+          "borrowers[].URLA",
+          "borrowers[].Tax Form 1120S"
+        ],
+        "htps": [
+          {
+            "name": "htp_extract_and_validate_1120s_data",
+            "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}. \n\n2. Extract Document and Validate Consistency\n   From List of Tax Form 1120SSCHK1, pick the one for the year ({computed_application_year}-1) and extract:\n   - \"schk1_tax_year\" as <Tax Form 1120SSCHK1.Tax Year> in the form YYYY.\n   - \"schk1_business_name\" as <Tax Form 1120SSCHK1.BusinessName>.\n   - \"schk1_borrower_name\" as <Tax Form 1120SSCHK1.BorrowerName>.\n   - \"ordinary_business_income\" as <Ordinary business income>.\n   - \"net_rental_real_estate_income\" as <Net rental real estate income>.\n   - \"other_net_rental_income\" as <Other net rental income>.\n   Validate:\n   - \"schk1_tax_year\" = <Tax Form 1120S.Tax Year>.\n   - \"schk1_business_name\" = <Tax Form 1120S.BusinessName> = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"schk1_borrower_name\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name> OR <\"Name\" present under \"ALIASES\" column for the borrower in IDP+>.\n\n3. Calculate and Select K-1 Income\n   From Tax Form 1120SSCHK1, extract \"k1_distributions\" as the amount from <Items affecting shareholder basis> where Description = 'D'.\n   Compute: \"k1_income\" = \"ordinary_business_income\" + \"net_rental_real_estate_income\" + \"other_net_rental_income\"\n   IF (\"k1_income\" < \"k1_distributions\" AND \"k1_income\" < 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\"  \n   ELSE IF (\"k1_income\" > \"k1_distributions\" AND \"k1_distributions\" != 0) THEN  \n      Store \"k1_distributions\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE IF (\"k1_distributions\" == 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE  \n      Store \"k1_income\" as \"selected_k1_value\"\n\n4. Extract Tax Form 1120S Data\n   From List of Tax Form 1120S, pick the one for the year ({computed_application_year}-1) and extract:\n   - \"1120s_tax_year\" as <Tax Form 1120S.Tax Year> = \"schk1_tax_year\".\n   - \"1120s_business_name\" as <Tax Form 1120S.BusinessName> = \"schk1_business_name\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   Extract:\n   - \"ordinary_income_loss\" as <Ordinary income loss>.\n   - \"nonrecurring_other_income\" as <Nonrecurring Other Income>.\n   - \"depreciation\" as <Depreciation>.\n   - \"depletion\" as <Depletion>.\n   - \"short_term_debt\" as <Mortgage, Notes, Bonds payable < 1 Year>.\n   - \"travel_entertainment\" as <Travel & Entertainment Expenses>.\n   - \"ending_capital\" as <Ending Capital>.\n\n5. Calculate Business Income\n   Compute: \"subtotal_business_income\" = \"ordinary_income_loss\" - \"nonrecurring_other_income\" + \"depreciation\" + \"depletion\" - \"short_term_debt\" - \"travel_entertainment\"\n   Compute: \"borrower_share_business_income\" = (\"ending_capital\" / 100) * \"subtotal_business_income\"\n\n6. Calculate Prior Year Monthly Average\n   Compute: \"<schk1_tax_year-1>.monthly_average\" = (\"borrower_share_business_income\" + \"selected_k1_value\") / 12\n   Store as \"prior_year_monthly_avg\".\n\n7. Compare Monthly Averages\n   Assume \"tax_year_monthly_avg\" is provided from the latest \"Tax Form 1120SSCHK1\" for \"schk1_tax_year\".\n   Compute: \"comparison_percentage\" = ((\"tax_year_monthly_avg\" - \"prior_year_monthly_avg\") / \"prior_year_monthly_avg\") * 100\n\n8. Calculate and Validate Monthly Income\n   IF (\"comparison_percentage\" \u2265 0) THEN  \n      Compute: \"monthly_income\" = (\"tax_year_monthly_avg\" + \"prior_year_monthly_avg\") / 2  \n   ELSE  \n      Store: \"monthly_income\" = \"tax_year_monthly_avg\"\n   IF (\"comparison_percentage\" > 30) THEN  \n      Return Discrepency Message: \"A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" \u2265 0 AND \"comparison_percentage\" \u2264 30) THEN  \n      Return Discrepency Message: \"The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" < 0 AND \"comparison_percentage\" \u2265 -30) THEN  \n      Return Discrepency Message: \"A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\" and terminate the process  \n   ELSE   \n      Return Discrepency Message: \"A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.\" and terminate the process  ",
+            "discrepancy_messages": "\n2. e. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n2. f  In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n9. A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability. \n10. The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\n11. A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\n12. A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+            "tasks": [
+              {
+                "task_name": "extract_dates_and_years",
+                "subtasks": [
+                  {
+                    "subtask_id": "1.a",
+                    "description": "Extract the application year from the application_date field. Parse the date string (which may be in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY format) and extract the year in YYYY format; store the resulting year as computed_application_year.",
+                    "inputs": [
+                      "'application_date': input_data -> application_date -> value"
+                    ],
+                    "formulas": [
+                      "computed_application_year = extract the substring representing the year (YYYY) from the application_date string based on its delimiter."
+                    ],
+                    "outputs": [
+                      "'computed_application_year': The extracted four-digit year from application_date."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "extract_application_year",
+                      "function_description": "Extracts the year from the application_date field, which can be in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY format, and returns the year in YYYY format.",
+                      "arguments": [
+                        {
+                          "argument_name": "application_date",
+                          "data_type": "String (Date)",
+                          "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['application_date']['value']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The extracted four-digit year from application_date."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "extract_document_and_validate_consistency",
+                "subtasks": [
+                  {
+                    "subtask_id": "2.a",
+                    "description": "From the list of Tax Form 1120SSCHK1, select the record corresponding to the year computed as (computed_application_year - 1). Then, extract the following fields: 'schk1_tax_year' from Tax Form 1120SSCHK1.Tax Year (in YYYY format), 'schk1_business_name' from Tax Form 1120SSCHK1.BusinessName, 'schk1_borrower_name' from Tax Form 1120SSCHK1.BorrowerName, 'ordinary_business_income' from the Ordinary business income field, 'net_rental_real_estate_income' from the Net rental real estate income field, and 'other_net_rental_income' from the Other net rental income field.",
+                    "inputs": [
+                      "'tax_form_1120sschk1_list': input_data -> borrowers -> 'Tax Form 1120SSCHK1' (list; select the record with tax_year equal to (computed_application_year - 1))"
+                    ],
+                    "formulas": [
+                      "target_year = computed_application_year - 1"
+                    ],
+                    "outputs": [
+                      "'schk1_tax_year': Tax Form 1120SSCHK1.Tax Year value for target_year",
+                      "'schk1_business_name': Tax Form 1120SSCHK1.BusinessName value",
+                      "'schk1_borrower_name': Tax Form 1120SSCHK1.BorrowerName value",
+                      "'ordinary_business_income': Extracted Ordinary business income",
+                      "'net_rental_real_estate_income': Extracted Net rental real estate income",
+                      "'other_net_rental_income': Extracted Other net rental income"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "extract_tax_form_1120sschk1_fields",
+                      "arguments": [
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 records from input_data -> borrowers -> 'Tax Form 1120SSCHK1'.",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1TaxYear String (Year)"
+                                    }
+                                  }
+                                },
+                                "corporation_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1CorporationName String"
+                                    }
+                                  }
+                                },
+                                "shareholder_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1ShareholderName String"
+                                    }
+                                  }
+                                },
+                                "income_details": {
+                                  "type": "object",
+                                  "properties": {
+                                    "ordinary_business_income_loss": {
+                                      "type": "object",
+                                      "properties": {
+                                        "value": {
+                                          "type": "string",
+                                          "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1OrdinaryBusinessIncomeLoss String (Currency)"
+                                        }
+                                      }
+                                    },
+                                    "net_rental_real_estate_income_loss": {
+                                      "type": "object",
+                                      "properties": {
+                                        "value": {
+                                          "type": "string",
+                                          "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1NetRentalRealEstateIncomeLoss String (Currency)"
+                                        }
+                                      }
+                                    },
+                                    "other_net_rental_income_loss": {
+                                      "type": "object",
+                                      "properties": {
+                                        "value": {
+                                          "type": "string",
+                                          "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1OtherNetRentalIncomeLoss String (Currency)"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The extracted four-digit year from application_date from task 1.a.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "schk1_tax_year",
+                          "data_type": "String",
+                          "description": "Tax Form 1120SSCHK1.Tax Year value for target_year"
+                        },
+                        {
+                          "field_name": "schk1_business_name",
+                          "data_type": "String",
+                          "description": "Tax Form 1120SSCHK1.BusinessName value"
+                        },
+                        {
+                          "field_name": "schk1_borrower_name",
+                          "data_type": "String",
+                          "description": "Tax Form 1120SSCHK1.BorrowerName value"
+                        },
+                        {
+                          "field_name": "ordinary_business_income",
+                          "data_type": "String",
+                          "description": "Extracted Ordinary business income"
+                        },
+                        {
+                          "field_name": "net_rental_real_estate_income",
+                          "data_type": "String",
+                          "description": "Extracted Net rental real estate income"
+                        },
+                        {
+                          "field_name": "other_net_rental_income",
+                          "data_type": "String",
+                          "description": "Extracted Other net rental income"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "2.b",
+                    "description": "Validate the extracted fields from Tax Form 1120SSCHK1 by comparing: (i) 'schk1_tax_year' with the Tax Form 1120S.Tax Year; (ii) 'schk1_business_name' with either URLA1003.Borrower Employer Name or URLA1003.1c Borrower Employer Name; and (iii) 'schk1_borrower_name' with one of URLA1003.Borrower Name, URLA 1003 Additional Borrower.Borrower Name, or the 'Name' present under 'ALIASES' column in IDP+. If all validations pass, mark the validation status as true.",
+                    "inputs": [
+                      "'schk1_tax_year': Extracted from Tax Form 1120SSCHK1 record",
+                      "'Tax Form 1120S.Tax Year': input_data -> other_doc_types -> 'Tax Form 1120S' (list; select record where tax_year equals target_year)",
+                      "'URLA1003.Borrower Employer Name': input_data -> borrowers -> URLA -> employer_name -> value",
+                      "'URLA1003.1c Borrower Employer Name': input_data -> borrowers -> additional_employer -> employer_name -> value",
+                      "'URLA1003.Borrower Name': input_data -> borrowers -> URLA -> borrower_name -> value",
+                      "'URLA 1003 Additional Borrower.Borrower Name': input_data -> borrowers -> additional_employer -> borrower_name -> value",
+                      "'ALIASES.Name': input_data -> borrowers -> (if applicable, from a field representing alias names in IDP+)"
+                    ],
+                    "formulas": [],
+                    "outputs": [
+                      "'validation_status': A Boolean indicating whether all extracted fields are consistent with the required sources."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_extracted_fields",
+                      "arguments": [
+                        {
+                          "argument_name": "schk1_tax_year",
+                          "data_type": "String",
+                          "description": "Extracted from Tax Form 1120SSCHK1 record from task 2.a.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1'][0]['tax_year']['value']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_tax_year",
+                          "data_type": "String",
+                          "description": "Tax Form 1120S.Tax Year from input_data -> other_doc_types -> 'Tax Form 1120S'.",
+                          "argument_schema": null,
+                          "data_access_str": "[item for item in input_data['other_doc_types']['Tax Form 1120S'] if item['tax_year']['value'] == output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_document_and_validate_consistency']['2.a']['schk1_tax_year']]"
+                        },
+                        {
+                          "argument_name": "url_a1003_borrower_employer_name",
+                          "data_type": "String",
+                          "description": "URLA1003.Borrower Employer Name from input_data -> borrowers -> URLA -> employer_name -> value.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['employer_name']['value']"
+                        },
+                        {
+                          "argument_name": "url_a1003_1c_borrower_employer_name",
+                          "data_type": "String",
+                          "description": "URLA1003.1c Borrower Employer Name from input_data -> borrowers -> additional_employer -> employer_name -> value.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['additional_employer'][0]['employer_name']['value']"
+                        },
+                        {
+                          "argument_name": "url_a1003_borrower_name",
+                          "data_type": "String",
+                          "description": "URLA1003.Borrower Name from input_data -> borrowers -> URLA -> borrower_name -> value.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['borrower_name']['value']"
+                        },
+                        {
+                          "argument_name": "url_a1003_additional_borrower_name",
+                          "data_type": "String",
+                          "description": "URLA 1003 Additional Borrower.Borrower Name from input_data -> borrowers -> additional_employer -> borrower_name -> value.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['additional_employer'][0]['employer_name']['value']"
+                        },
+                        {
+                          "argument_name": "aliases_name",
+                          "data_type": "String",
+                          "description": "ALIASES.Name from input_data -> borrowers -> (if applicable, from a field representing alias names in IDP+).",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['borrower_name']['value']"
+                        }
+                      ],
+                      "return_type": "Boolean",
+                      "return_description": [
+                        {
+                          "field_name": "validation_status",
+                          "data_type": "Boolean",
+                          "description": "A Boolean indicating whether all extracted fields are consistent with the required sources."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "calculate_and_select_k-1_income",
+                "subtasks": [
+                  {
+                    "subtask_id": "3.a",
+                    "description": "From the Tax Form 1120SSCHK1 record selected earlier, extract 'k1_distributions' by navigating through the 'items_affecting_shareholder_basis' list and selecting the record where the 'description' equals 'D'.",
+                    "inputs": [
+                      "'items_affecting_shareholder_basis': input_data -> borrowers -> 'Tax Form 1120SSCHK1' -> items_affecting_shareholder_basis -> (select the record where description equals 'D')"
+                    ],
+                    "formulas": [],
+                    "outputs": [
+                      "'k1_distributions': The amount extracted from the identified record."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "extract_k1_distributions",
+                      "arguments": [
+                        {
+                          "argument_name": "items_affecting_shareholder_basis",
+                          "data_type": "List[dict]",
+                          "description": "List of items affecting shareholder basis from Tax Form 1120SSCHK1.",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "description": {
+                                  "type": "string",
+                                  "description": "Description of the item."
+                                },
+                                "amount": {
+                                  "type": "string",
+                                  "description": "Amount associated with the item."
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "[item for item in input_data['borrowers'][0]['Tax Form 1120SSCHK1'][0]['items_affecting_shareholder_basis'] if item['description'] == 'D']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "k1_distributions",
+                          "data_type": "String",
+                          "description": "The amount extracted from the identified record where description equals 'D'."
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "3.b",
+                    "description": "Calculate 'k1_income' by summing the three fields: ordinary_business_income, net_rental_real_estate_income, and other_net_rental_income extracted from Tax Form 1120SSCHK1.",
+                    "inputs": [
+                      "'ordinary_business_income': Extracted from Tax Form 1120SSCHK1",
+                      "'net_rental_real_estate_income': Extracted from Tax Form 1120SSCHK1",
+                      "'other_net_rental_income': Extracted from Tax Form 1120SSCHK1"
+                    ],
+                    "formulas": [
+                      "k1_income = ordinary_business_income + net_rental_real_estate_income + other_net_rental_income"
+                    ],
+                    "outputs": [
+                      "'k1_income': The computed total income from K-1 sources."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "calculate_k1_income",
+                      "arguments": [
+                        {
+                          "argument_name": "ordinary_business_income",
+                          "data_type": "String",
+                          "description": "Extracted Ordinary business income from Tax Form 1120SSCHK1.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1'][0]['income_details']['ordinary_business_income_loss']['value']"
+                        },
+                        {
+                          "argument_name": "net_rental_real_estate_income",
+                          "data_type": "String",
+                          "description": "Extracted Net rental real estate income from Tax Form 1120SSCHK1.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_document_and_validate_consistency']['2.a']['net_rental_real_estate_income']"
+                        },
+                        {
+                          "argument_name": "other_net_rental_income",
+                          "data_type": "String",
+                          "description": "Extracted Other net rental income from Tax Form 1120SSCHK1.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_document_and_validate_consistency']['2.a']['other_net_rental_income']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "k1_income",
+                          "data_type": "String",
+                          "description": "The computed total income from K-1 sources."
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "3.c",
+                    "description": "Based on the computed values of k1_income and k1_distributions, determine the selected K-1 income as follows: \n- IF (k1_income < k1_distributions AND k1_income < 0) THEN store k1_income as selected_k1_value.\n- ELSE IF (k1_income > k1_distributions AND k1_distributions != 0) THEN store k1_distributions as selected_k1_value and return the discrepancy message 'In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.'\n- ELSE IF (k1_distributions == 0) THEN store k1_income as selected_k1_value and return the same discrepancy message.\n- ELSE store k1_income as selected_k1_value.",
+                    "inputs": [
+                      "'k1_income': computed in subtask 3.b",
+                      "'k1_distributions': extracted in subtask 3.a"
+                    ],
+                    "formulas": [
+                      "IF (k1_income < k1_distributions AND k1_income < 0) THEN selected_k1_value = k1_income",
+                      "ELSE IF (k1_income > k1_distributions AND k1_distributions != 0) THEN selected_k1_value = k1_distributions",
+                      "ELSE IF (k1_distributions == 0) THEN selected_k1_value = k1_income",
+                      "ELSE selected_k1_value = k1_income"
+                    ],
+                    "outputs": [
+                      "'selected_k1_value': The chosen K-1 income value based on the above conditions.",
+                      "'discrepancy_msg': The discrepancy message if a condition requiring liquidity validation is met; otherwise, an empty string."
+                    ],
+                    "discrepancy_string": "In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "select_k1_income",
+                      "arguments": [
+                        {
+                          "argument_name": "k1_income",
+                          "data_type": "String",
+                          "description": "The computed total income from K-1 sources.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['calculate_and_select_k-1_income']['3.b']['k1_income']"
+                        },
+                        {
+                          "argument_name": "k1_distributions",
+                          "data_type": "String",
+                          "description": "The amount extracted from the identified record where description equals 'D'.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['calculate_and_select_k-1_income']['3.a']['k1_distributions']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "selected_k1_value",
+                          "data_type": "String",
+                          "description": "The chosen K-1 income value based on the specified conditions."
+                        },
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "The discrepancy message if a condition requiring liquidity validation is met; otherwise, an empty string."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "extract_tax_form_1120s_data",
+                "subtasks": [
+                  {
+                    "subtask_id": "4.a",
+                    "description": "From the list of Tax Form 1120S available in other_doc_types, select the record corresponding to the year (computed_application_year - 1). Then extract the following fields: \n- '1120s_tax_year' from Tax Form 1120S.Tax Year (this should be equal to schk1_tax_year), \n- '1120s_business_name' from Tax Form 1120S.BusinessName (which should be equal to schk1_business_name and one of URLA1003 employer names), and \n- the following financial fields: 'ordinary_income_loss', 'nonrecurring_other_income', 'depreciation', 'depletion', 'short_term_debt', 'travel_entertainment', and 'ending_capital'.",
+                    "inputs": [
+                      "'tax_form_1120s_list': input_data -> other_doc_types -> 'Tax Form 1120S' (list; select the record where tax_year equals (computed_application_year - 1))"
+                    ],
+                    "formulas": [
+                      "target_year = computed_application_year - 1"
+                    ],
+                    "outputs": [
+                      "'1120s_tax_year': Extracted Tax Year from Tax Form 1120S (should equal schk1_tax_year)",
+                      "'1120s_business_name': Extracted BusinessName from Tax Form 1120S (should equal schk1_business_name)",
+                      "'ordinary_income_loss': Extracted Ordinary income loss amount",
+                      "'nonrecurring_other_income': Extracted Nonrecurring Other Income",
+                      "'depreciation': Extracted Depreciation value",
+                      "'depletion': Extracted Depletion value",
+                      "'short_term_debt': Extracted Mortgage, Notes, Bonds payable (<1 Year) amount",
+                      "'travel_entertainment': Extracted Travel & Entertainment Expenses amount",
+                      "'ending_capital': Extracted Ending Capital value"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "extract_tax_form_1120s_data",
+                      "arguments": [
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S records from other_doc_types where tax_year equals (computed_application_year - 1).",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "business_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.Name String"
+                                    }
+                                  }
+                                },
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.Year Start String (Year)"
+                                    }
+                                  }
+                                },
+                                "ordinary_business_income_loss": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.taxForm1120SOrdinaryBusinessIncomeLoss String (Currency)"
+                                    }
+                                  }
+                                },
+                                "other_income_loss": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.taxForm1120SOtherIncomeLoss String (Currency)"
+                                    }
+                                  }
+                                },
+                                "depreciation_attach_form_4562": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.taxForm1120SDepreciationAttachForm4562 String (Currency)"
+                                    }
+                                  }
+                                },
+                                "depletion_excluding_oil_and_gas": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.taxForm1120SDepletionExcludingOilandGas String (Currency)"
+                                    }
+                                  }
+                                },
+                                "schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.taxForm1120SScheduleLMortgagesNotesBondsPayableinLessThan1YearEndofTaxYear String (Currency)"
+                                    }
+                                  }
+                                },
+                                "schedule_m1_travel_and_entertainment_expenses": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.taxForm1120SScheduleM1TravelandEntertainmentExpenses String (Currency)"
+                                    }
+                                  }
+                                },
+                                "schedule_l_cash_end_of_tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.taxForm1120SScheduleLCashEndofTaxYear String (Currency)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "[record for record in input_data['other_doc_types']['Tax Form 1120S'] if record['tax_year'] == (computed_application_year - 1)]"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The computed four-digit year from application_date.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        },
+                        {
+                          "argument_name": "schk1_tax_year",
+                          "data_type": "String",
+                          "description": "Tax Form 1120SSCHK1.Tax Year value for target_year.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_document_and_validate_consistency']['2.a']['schk1_tax_year']"
+                        },
+                        {
+                          "argument_name": "schk1_business_name",
+                          "data_type": "String",
+                          "description": "Tax Form 1120SSCHK1.BusinessName value.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_document_and_validate_consistency']['2.a']['schk1_business_name']"
+                        },
+                        {
+                          "argument_name": "url_employer_names",
+                          "data_type": "List[String]",
+                          "description": "List of employer names from URLA1003.",
+                          "argument_schema": null,
+                          "data_access_str": "[ item['URLA']['borrower_name']['value'] for item in input_data['borrowers']]"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "1120s_tax_year",
+                          "data_type": "String",
+                          "description": "Extracted Tax Year from Tax Form 1120S (should equal schk1_tax_year)."
+                        },
+                        {
+                          "field_name": "1120s_business_name",
+                          "data_type": "String",
+                          "description": "Extracted BusinessName from Tax Form 1120S (should equal schk1_business_name)."
+                        },
+                        {
+                          "field_name": "ordinary_income_loss",
+                          "data_type": "String",
+                          "description": "Extracted Ordinary income loss amount."
+                        },
+                        {
+                          "field_name": "nonrecurring_other_income",
+                          "data_type": "String",
+                          "description": "Extracted Nonrecurring Other Income."
+                        },
+                        {
+                          "field_name": "depreciation",
+                          "data_type": "String",
+                          "description": "Extracted Depreciation value."
+                        },
+                        {
+                          "field_name": "depletion",
+                          "data_type": "String",
+                          "description": "Extracted Depletion value."
+                        },
+                        {
+                          "field_name": "short_term_debt",
+                          "data_type": "String",
+                          "description": "Extracted Mortgage, Notes, Bonds payable (<1 Year) amount."
+                        },
+                        {
+                          "field_name": "travel_entertainment",
+                          "data_type": "String",
+                          "description": "Extracted Travel & Entertainment Expenses amount."
+                        },
+                        {
+                          "field_name": "ending_capital",
+                          "data_type": "String",
+                          "description": "Extracted Ending Capital value."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "calculate_business_income",
+                "subtasks": [
+                  {
+                    "subtask_id": "5.a",
+                    "description": "Calculate 'subtotal_business_income' using the formula: ordinary_income_loss - nonrecurring_other_income + depreciation + depletion - short_term_debt - travel_entertainment.",
+                    "inputs": [
+                      "'ordinary_income_loss': extracted from Tax Form 1120S",
+                      "'nonrecurring_other_income': extracted from Tax Form 1120S",
+                      "'depreciation': extracted from Tax Form 1120S",
+                      "'depletion': extracted from Tax Form 1120S",
+                      "'short_term_debt': extracted from Tax Form 1120S",
+                      "'travel_entertainment': extracted from Tax Form 1120S"
+                    ],
+                    "formulas": [
+                      "subtotal_business_income = ordinary_income_loss - nonrecurring_other_income + depreciation + depletion - short_term_debt - travel_entertainment"
+                    ],
+                    "outputs": [
+                      "'subtotal_business_income': The computed business income subtotal."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "calculate_subtotal_business_income",
+                      "arguments": [
+                        {
+                          "argument_name": "ordinary_income_loss",
+                          "data_type": "String",
+                          "description": "Extracted Ordinary income loss amount from Tax Form 1120S.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_tax_form_1120s_data']['4.a']['ordinary_income_loss']"
+                        },
+                        {
+                          "argument_name": "nonrecurring_other_income",
+                          "data_type": "String",
+                          "description": "Extracted Nonrecurring Other Income from Tax Form 1120S.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_tax_form_1120s_data']['4.a']['nonrecurring_other_income']"
+                        },
+                        {
+                          "argument_name": "depreciation",
+                          "data_type": "String",
+                          "description": "Extracted Depreciation value from Tax Form 1120S.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_tax_form_1120s_data']['4.a']['depreciation']"
+                        },
+                        {
+                          "argument_name": "depletion",
+                          "data_type": "String",
+                          "description": "Extracted Depletion value from Tax Form 1120S.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_tax_form_1120s_data']['4.a']['depletion']"
+                        },
+                        {
+                          "argument_name": "short_term_debt",
+                          "data_type": "String",
+                          "description": "Extracted Mortgage, Notes, Bonds payable (<1 Year) amount from Tax Form 1120S.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_tax_form_1120s_data']['4.a']['short_term_debt']"
+                        },
+                        {
+                          "argument_name": "travel_entertainment",
+                          "data_type": "String",
+                          "description": "Extracted Travel & Entertainment Expenses amount from Tax Form 1120S.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_tax_form_1120s_data']['4.a']['travel_entertainment']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "subtotal_business_income",
+                          "data_type": "String",
+                          "description": "The computed business income subtotal."
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "5.b",
+                    "description": "Calculate 'borrower_share_business_income' using the formula: (ending_capital / 100) * subtotal_business_income.",
+                    "inputs": [
+                      "'ending_capital': extracted from Tax Form 1120S",
+                      "'subtotal_business_income': computed in subtask 5.a"
+                    ],
+                    "formulas": [
+                      "borrower_share_business_income = (ending_capital / 100) * subtotal_business_income"
+                    ],
+                    "outputs": [
+                      "'borrower_share_business_income': The calculated business income share for the borrower."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "calculate_borrower_share_business_income",
+                      "arguments": [
+                        {
+                          "argument_name": "ending_capital",
+                          "data_type": "String",
+                          "description": "Extracted Ending Capital value from Tax Form 1120S.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['extract_tax_form_1120s_data']['4.a']['ending_capital']"
+                        },
+                        {
+                          "argument_name": "subtotal_business_income",
+                          "data_type": "String",
+                          "description": "The computed business income subtotal from subtask 5.a.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['calculate_business_income']['5.a']['subtotal_business_income']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "borrower_share_business_income",
+                          "data_type": "String",
+                          "description": "The calculated business income share for the borrower."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "calculate_prior_year_monthly_average",
+                "subtasks": [
+                  {
+                    "subtask_id": "6.a",
+                    "description": "Compute 'prior_year_monthly_avg' using the formula: (borrower_share_business_income + selected_k1_value) / 12.",
+                    "inputs": [
+                      "'borrower_share_business_income': computed in Task 5.b",
+                      "'selected_k1_value': determined in Task 3.c"
+                    ],
+                    "formulas": [
+                      "prior_year_monthly_avg = (borrower_share_business_income + selected_k1_value) / 12"
+                    ],
+                    "outputs": [
+                      "'prior_year_monthly_avg': The calculated average monthly income from the prior year."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "compute_prior_year_monthly_avg",
+                      "function_description": "Compute 'prior_year_monthly_avg' using the formula: (borrower_share_business_income + selected_k1_value) / 12.",
+                      "arguments": [
+                        {
+                          "argument_name": "borrower_share_business_income",
+                          "data_type": "String",
+                          "description": "The calculated business income share for the borrower from Task 5.b.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['calculate_business_income']['5.b']['borrower_share_business_income']"
+                        },
+                        {
+                          "argument_name": "selected_k1_value",
+                          "data_type": "String",
+                          "description": "The chosen K-1 income value based on the specified conditions from Task 3.c.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['calculate_and_select_k-1_income']['3.c']['selected_k1_value']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "prior_year_monthly_avg",
+                          "data_type": "Float",
+                          "description": "The calculated average monthly income from the prior year."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "compare_monthly_averages",
+                "subtasks": [
+                  {
+                    "subtask_id": "7.a",
+                    "description": "Compute 'comparison_percentage' using the formula: ((tax_year_monthly_avg - prior_year_monthly_avg) / prior_year_monthly_avg) * 100. The value 'tax_year_monthly_avg' is provided from the latest Tax Form 1120SSCHK1 for schk1_tax_year.",
+                    "inputs": [
+                      "'tax_year_monthly_avg': input_data -> borrowers -> 'Tax Form 1120SSCHK1' -> monthly_average (for schk1_tax_year)",
+                      "'prior_year_monthly_avg': computed in Task 6.a"
+                    ],
+                    "formulas": [
+                      "comparison_percentage = ((tax_year_monthly_avg - prior_year_monthly_avg) / prior_year_monthly_avg) * 100"
+                    ],
+                    "outputs": [
+                      "'comparison_percentage': The computed percentage change between the current and prior year monthly averages."
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "compute_comparison_percentage",
+                      "arguments": [
+                        {
+                          "argument_name": "tax_year_monthly_avg",
+                          "data_type": "Float",
+                          "description": "The monthly average for the tax year extracted from the latest Tax Form 1120SSCHK1 for schk1_tax_year.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120s']['calculate_monthly_average']['9.a']['monthly_average']"
+                        },
+                        {
+                          "argument_name": "prior_year_monthly_avg",
+                          "data_type": "Float",
+                          "description": "The calculated average monthly income from the prior year, computed in Task 6.a.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['calculate_prior_year_monthly_average']['6.a']['prior_year_monthly_avg']"
+                        }
+                      ],
+                      "function_description": "Compute the 'comparison_percentage' using the formula: ((tax_year_monthly_avg - prior_year_monthly_avg) / prior_year_monthly_avg) * 100.",
+                      "return_type": "Float",
+                      "return_description": [
+                        {
+                          "field_name": "comparison_percentage",
+                          "data_type": "Float",
+                          "description": "The computed percentage change between the current and prior year monthly averages."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "calculate_and_validate_monthly_income",
+                "subtasks": [
+                  {
+                    "subtask_id": "8.a",
+                    "description": "Calculate the 'monthly_income' and validate business income trends using 'comparison_percentage' as follows:\n1. IF (comparison_percentage \u2265 0) THEN set monthly_income = (tax_year_monthly_avg + prior_year_monthly_avg) / 2; ELSE set monthly_income = tax_year_monthly_avg.\n2. THEN evaluate comparison_percentage:\n   - IF (comparison_percentage > 30) THEN return discrepancy message 'A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.' and terminate the process.\n   - ELSE IF (comparison_percentage \u2265 0 AND comparison_percentage \u2264 30) THEN return discrepancy message 'The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.' and terminate the process.\n   - ELSE IF (comparison_percentage < 0 AND comparison_percentage \u2265 -30) THEN return discrepancy message 'A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.' and terminate the process.\n   - ELSE return discrepancy message 'A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.' and terminate the process.",
+                    "inputs": [
+                      "'tax_year_monthly_avg': input_data -> borrowers -> 'Tax Form 1120SSCHK1' -> monthly_average (for schk1_tax_year)",
+                      "'prior_year_monthly_avg': computed in Task 6.a",
+                      "'comparison_percentage': computed in Task 7.a"
+                    ],
+                    "formulas": [
+                      "IF comparison_percentage \u2265 0 THEN monthly_income = (tax_year_monthly_avg + prior_year_monthly_avg) / 2 ELSE monthly_income = tax_year_monthly_avg"
+                    ],
+                    "outputs": [
+                      "'monthly_income': The final computed monthly income value based on the above logic.",
+                      "'discrepancy_msg': The discrepancy message based on the range in which comparison_percentage falls."
+                    ],
+                    "discrepancy_string": "A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.; The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.; A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.; A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": true,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "calculate_and_validate_monthly_income",
+                      "arguments": [
+                        {
+                          "argument_name": "tax_year_monthly_avg",
+                          "data_type": "Float",
+                          "description": "Monthly average income for the tax year extracted from 'Tax Form 1120SSCHK1'.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120s']['calculate_monthly_average']['9.a']['monthly_average']"
+                        },
+                        {
+                          "argument_name": "prior_year_monthly_avg",
+                          "data_type": "Float",
+                          "description": "The calculated average monthly income from the prior year. Output from Task 6.a.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['calculate_prior_year_monthly_average']['6.a']['prior_year_monthly_avg']"
+                        },
+                        {
+                          "argument_name": "comparison_percentage",
+                          "data_type": "Float",
+                          "description": "The computed percentage change between the current and prior year monthly averages. Output from Task 7.a.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_1120s_data']['compare_monthly_averages']['7.a']['comparison_percentage']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "monthly_income",
+                          "data_type": "Float",
+                          "description": "The final computed monthly income value based on the given logic."
+                        },
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "The discrepancy message based on the range in which comparison_percentage falls."
+                        },
+                        {
+                          "field_name": "terminate_process",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether the process should be terminated."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

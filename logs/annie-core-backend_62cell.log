@@ -1,0 +1,322 @@
+[2025-04-01 19:36:39,701] [INFO] [Thread-1 (run_monitor_task)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting websocket monitoring thread
+[2025-04-01 19:36:39,710] [INFO] [Thread-2 (start)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting to consume from mortgage-qc-process
+[2025-04-01 19:36:45,922] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Setting pod_termination True
+[2025-04-01 19:37:05,773] [INFO] [Thread-1 (run_monitor_task)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting websocket monitoring thread
+[2025-04-01 19:37:05,782] [INFO] [Thread-2 (start)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting to consume from mortgage-qc-process
+[2025-04-01 19:52:07,644] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Setting pod_termination True
+[2025-04-01 19:52:15,570] [INFO] [Thread-1 (run_monitor_task)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting websocket monitoring thread
+[2025-04-01 19:52:15,591] [INFO] [Thread-2 (start)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting to consume from mortgage-qc-process
+[2025-04-01 19:58:50,661] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Received request to generate income results via process
+[2025-04-01 19:59:15,973] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Received request to generate income results via process add59bd9-59ae-4f66-a922-83b0470c17b8
+[2025-04-01 19:59:17,504] [ERROR] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Error running process add59bd9-59ae-4f66-a922-83b0470c17b8: Failed to reach API at http://0.0.0.0:4200/api/
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_transports/default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 101, in handle_request
+    raise exc
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 78, in handle_request
+    stream = self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpcore/_sync/connection.py", line 124, in _connect
+    stream = self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpcore/_backends/sync.py", line 207, in connect_tcp
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/client/orchestration/__init__.py", line 1524, in raise_for_api_version_mismatch
+    api_version = self.api_version()
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/client/orchestration/__init__.py", line 1512, in api_version
+    res = self._client.get("/admin/version")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_client.py", line 1053, in get
+    return self.request(
+           ^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/client/base.py", line 542, in send
+    response = self._send_with_retry(
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/client/base.py", line 466, in _send_with_retry
+    response = send(request, *send_args, **send_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_transports/default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/api/v1/endpoints/mortgage_process.py", line 77, in run_process
+    result = mortgage_qc_flow(process_id, request_payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/flows.py", line 1648, in __call__
+    return run_flow(
+           ^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/flow_engine.py", line 1530, in run_flow
+    ret_val = run_flow_sync(**kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/flow_engine.py", line 1370, in run_flow_sync
+    with engine.start():
+         ^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/flow_engine.py", line 742, in start
+    with self.initialize_run():
+         ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/flow_engine.py", line 672, in initialize_run
+    with SyncClientContext.get_or_create() as client_ctx:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/context.py", line 241, in get_or_create
+    with cls() as ctx:
+         ^^^^^
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/context.py", line 223, in __enter__
+    self.client.raise_for_api_version_mismatch()
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/v_env/lib/python3.12/site-packages/prefect/client/orchestration/__init__.py", line 1528, in raise_for_api_version_mismatch
+    raise RuntimeError(f"Failed to reach API at {self.api_url}") from e
+RuntimeError: Failed to reach API at http://0.0.0.0:4200/api/
+[2025-04-01 19:59:39,702] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Setting pod_termination True
+[2025-04-01 19:59:48,398] [INFO] [Thread-1 (run_monitor_task)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting websocket monitoring thread
+[2025-04-01 19:59:48,410] [INFO] [Thread-2 (start)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting to consume from mortgage-qc-process
+[2025-04-01 19:59:54,108] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Received request to generate income results via process add59bd9-59ae-4f66-a922-83b0470c17b8
+[2025-04-01 19:59:54,684] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: extract_dates_and_computed_year
+[2025-04-01 19:59:54,858] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: determine_application_date_scenario
+[2025-04-01 19:59:55,010] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: determine_disbursement_date_scenario
+[2025-04-01 19:59:55,181] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_1
+[2025-04-01 19:59:55,182] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,183] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,184] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,344] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_2
+[2025-04-01 19:59:55,345] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,346] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,529] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_3
+[2025-04-01 19:59:55,530] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,531] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,532] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 19:59:55,537] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: output_data : {'rule_sch_c_business_income_1': {'htp_schedule_c_validation': {'extract_dates_and_computed_year': {'1.a': {'computed_application_year': {'error': "Error loading function 'extract_application_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/extract_dates_and_computed_year.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/extract_dates_and_computed_year.py'"}}}, 'determine_application_date_scenario': {'2.a': {'error': "Error loading function 'determine_application_date_scenario' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_application_date_scenario.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_application_date_scenario.py'"}}, 'determine_disbursement_date_scenario': {'3.a': {'disb_scenario': {'error': "Error loading function 'determine_disbursement_date_scenario' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_disbursement_date_scenario.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_disbursement_date_scenario.py'"}}}, 'validate_tax_form_presence_app_scenario_1': {'4.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_1_2_3' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}, '4.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_4_5_6_7' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}, '4.c': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_8' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}}, 'validate_tax_form_presence_app_scenario_2': {'5.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_for_scenario_2_disb_2_to_7' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py'"}}, '5.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_for_scenario_2_disb_8' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py'"}}}, 'validate_tax_form_presence_app_scenario_3': {'6.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_previous_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}, '6.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_current_year_or_prior_with_docs' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}, '6.c': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_current_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}}}}}
+[2025-04-01 19:59:55,611] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Process add59bd9-59ae-4f66-a922-83b0470c17b8 completed successfully
+[2025-04-01 20:02:05,213] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Setting pod_termination True
+[2025-04-01 20:02:10,396] [INFO] [Thread-1 (run_monitor_task)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting websocket monitoring thread
+[2025-04-01 20:02:10,412] [INFO] [Thread-2 (start)] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Starting to consume from mortgage-qc-process
+[2025-04-01 20:02:32,412] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Received request to generate income results via process add59bd9-59ae-4f66-a922-83b0470c17b8
+[2025-04-01 20:02:32,995] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: extract_dates_and_computed_year
+[2025-04-01 20:02:33,174] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: determine_application_date_scenario
+[2025-04-01 20:02:33,364] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: determine_disbursement_date_scenario
+[2025-04-01 20:02:33,542] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_1
+[2025-04-01 20:02:33,543] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,544] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,545] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,759] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_2
+[2025-04-01 20:02:33,759] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,760] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,947] [INFO] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_3
+[2025-04-01 20:02:33,948] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,949] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,951] [ERROR] [ThreadPoolExecutor-0_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:02:33,957] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: output_data : {'rule_sch_c_business_income_1': {'htp_schedule_c_validation': {'extract_dates_and_computed_year': {'1.a': {'computed_application_year': {'error': "Error loading function 'extract_application_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/extract_dates_and_computed_year.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/extract_dates_and_computed_year.py'"}}}, 'determine_application_date_scenario': {'2.a': {'error': "Error loading function 'determine_application_date_scenario' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_application_date_scenario.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_application_date_scenario.py'"}}, 'determine_disbursement_date_scenario': {'3.a': {'disb_scenario': {'error': "Error loading function 'determine_disbursement_date_scenario' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_disbursement_date_scenario.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_disbursement_date_scenario.py'"}}}, 'validate_tax_form_presence_app_scenario_1': {'4.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_1_2_3' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}, '4.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_4_5_6_7' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}, '4.c': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_8' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}}, 'validate_tax_form_presence_app_scenario_2': {'5.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_for_scenario_2_disb_2_to_7' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py'"}}, '5.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_for_scenario_2_disb_8' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py'"}}}, 'validate_tax_form_presence_app_scenario_3': {'6.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_previous_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}, '6.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_current_year_or_prior_with_docs' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}, '6.c': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_current_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}}}}}
+[2025-04-01 20:02:34,021] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Process add59bd9-59ae-4f66-a922-83b0470c17b8 completed successfully
+[2025-04-01 20:02:55,742] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Received request to generate income results via process
+[2025-04-01 20:03:07,665] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Received request to generate income results via process add59bd9-59ae-4f66-a922-83b0470c17b8
+[2025-04-01 20:03:08,197] [INFO] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: extract_dates_and_computed_year
+[2025-04-01 20:03:08,382] [INFO] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: determine_application_date_scenario
+[2025-04-01 20:03:08,555] [INFO] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: determine_disbursement_date_scenario
+[2025-04-01 20:03:08,761] [INFO] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_1
+[2025-04-01 20:03:08,762] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:08,763] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:08,764] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:08,930] [INFO] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_2
+[2025-04-01 20:03:08,931] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:08,932] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:09,124] [INFO] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Executing Task node: validate_tax_form_presence_app_scenario_3
+[2025-04-01 20:03:09,125] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:09,127] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:09,128] [ERROR] [ThreadPoolExecutor-1_0] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Failed to resolve argument app_scenario - htp_schedule_c_validation: 'app_scenario'
+Traceback (most recent call last):
+  File "/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/services/process_mgr_service/mortgage_qc_process.py", line 130, in resolve_arguments
+    resolved_args[arg_name] = eval(
+                              ^^^^^
+  File "<string>", line 1, in <module>
+KeyError: 'app_scenario'
+[2025-04-01 20:03:09,133] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: output_data : {'rule_sch_c_business_income_1': {'htp_schedule_c_validation': {'extract_dates_and_computed_year': {'1.a': {'computed_application_year': {'error': "Error loading function 'extract_application_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/extract_dates_and_computed_year.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/extract_dates_and_computed_year.py'"}}}, 'determine_application_date_scenario': {'2.a': {'error': "Error loading function 'determine_application_date_scenario' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_application_date_scenario.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_application_date_scenario.py'"}}, 'determine_disbursement_date_scenario': {'3.a': {'disb_scenario': {'error': "Error loading function 'determine_disbursement_date_scenario' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_disbursement_date_scenario.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/determine_disbursement_date_scenario.py'"}}}, 'validate_tax_form_presence_app_scenario_1': {'4.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_1_2_3' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}, '4.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_4_5_6_7' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}, '4.c': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_scenario_8' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_1.py'"}}}, 'validate_tax_form_presence_app_scenario_2': {'5.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_for_scenario_2_disb_2_to_7' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py'"}}, '5.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_for_scenario_2_disb_8' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_2.py'"}}}, 'validate_tax_form_presence_app_scenario_3': {'6.a': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_previous_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}, '6.b': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_current_year_or_prior_with_docs' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}, '6.c': {'discrepancy_message': {'error': "Error loading function 'validate_tax_form_1040_current_year' from module '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py': [Errno 2] No such file or directory: '/home/navaneethamarnath/projects/agents-research/structured_code_eval/programs/62nd_logging_code/programs/rule_sch_c_business_income_1/htp_schedule_c_validation/validate_tax_form_presence_app_scenario_3.py'"}}}}}}
+[2025-04-01 20:03:09,209] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Process add59bd9-59ae-4f66-a922-83b0470c17b8 completed successfully
+[2025-04-02 12:57:44,211] [INFO] [MainThread] [/home/navaneethamarnath/projects/agents-research/annie-core-backend/app/core/config/logging_config.py] [_log:112] [N/A]: Received request to generate income results via process

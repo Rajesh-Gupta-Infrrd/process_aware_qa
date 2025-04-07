@@ -1,0 +1,636 @@
+[
+    {
+        "name": "rule_schedule_c_cash_flow_analysis",
+        "question": "Is the trend of Schedule C self employment cash flow analysis reflect consistent earnings?",
+        "steps": [
+            {
+                "name": "step_schedule_c_validation",
+                "fields": "Doc_type \"Tax Form 1040SCHC\"",
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].Tax Form 1040SCHC"
+                ],
+                "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n2. Extract Document and Data\n   From List of Tax Form 1040SCHC, pick the one for the year ({computed_application_year}-1) and extract:\n   - \"tax_year\" as <Tax Return Year> in the form YYYY.\n   - \"business_miles\" as <Business Miles>.\n   - \"net_profit_or_loss\" as <Net profit or loss>.\n   - \"other_income\" as <Other income>.\n   - \"depletion\" as <Depletion>.\n   - \"depreciation\" as <Depreciation>.\n   - \"deductible_meals\" as <Deductible meals>.\n   - \"home_business_expenses\" as <Expenses for business use of your home>.\n\n3. Assign Mileage Rate\n   Assign the mileage rate based on \"tax_year\" from the following list:\n   - 2025 = 0.33\n   - 2024 = 0.30\n   - 2023 = 0.28\n   - 2022 = 0.26\n   - 2021 = 0.26\n   - 2020 = 0.27\n   - 2019 = 0.26\n   - 2018 = 0.25\n   - 2017 = 0.25\n   - 2016 = 0.24\n   - 2015 = 0.24\n   - 2014 = 0.22\n   Store the assigned value as \"mileage_rate\".\n\n4. Calculate Vehicle Depreciation\n   Compute: \"vehicle_depreciation\" = \"business_miles\" * \"mileage_rate\"\n\n5. Calculate Prior Year Monthly Average\n   Compute: \"<tax_year-1>.monthly_average\" = [\"net_profit_or_loss\" - \"other_income\" + \"depletion\" + \"depreciation\" - \"deductible_meals\" + \"home_business_expenses\" + \"vehicle_depreciation\"] / 12\n   Store as \"prior_year_monthly_avg\".\n\n6. Compare Monthly Averages\n   Assume \"tax_year_monthly_avg\" is provided from the latest \"Tax Form 1040SCHC\" for \"tax_year\".\n   Compute: \"comparison_percentage\" = ((\"tax_year_monthly_avg\" - \"prior_year_monthly_avg\") / \"prior_year_monthly_avg\") * 100\n\n7. Calculate Monthly Income\n   IF (\"comparison_percentage\" \u2265 0) THEN  \n      Compute: \"monthly_income\" = (\"tax_year_monthly_avg\" + \"prior_year_monthly_avg\") / 2  \n   ELSE  \n      Store: \"monthly_income\" = \"tax_year_monthly_avg\"\n\n8. Validate Income Trend\n   IF (\"comparison_percentage\" > 30) THEN  \n      Return Discrepency Message: \"A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" \u2265 0 AND \"comparison_percentage\" \u2264 30) THEN  \n      Return Discrepency Message: \"The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" < 0 AND \"comparison_percentage\" \u2265 -30) THEN  \n      Return Discrepency Message: \"A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\" and terminate the process  \n   ELSE  \n      Return Discrepency Message: \"A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.\" and terminate the process  ",
+                "discrepancy_messages": "7. A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability. \n8. The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\n9. A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\n10. A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+                "doc_type_keys": [
+                    "borrowers[].Tax Form 1040SCHC"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_schedule_c_validation",
+                        "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n2. Extract Document and Data\n   From List of Tax Form 1040SCHC, pick the one for the year ({computed_application_year}-1) and extract:\n   - \"tax_year\" as <Tax Return Year> in the form YYYY.\n   - \"business_miles\" as <Business Miles>.\n   - \"net_profit_or_loss\" as <Net profit or loss>.\n   - \"other_income\" as <Other income>.\n   - \"depletion\" as <Depletion>.\n   - \"depreciation\" as <Depreciation>.\n   - \"deductible_meals\" as <Deductible meals>.\n   - \"home_business_expenses\" as <Expenses for business use of your home>.\n\n3. Assign Mileage Rate\n   Assign the mileage rate based on \"tax_year\" from the following list:\n   - 2025 = 0.33\n   - 2024 = 0.30\n   - 2023 = 0.28\n   - 2022 = 0.26\n   - 2021 = 0.26\n   - 2020 = 0.27\n   - 2019 = 0.26\n   - 2018 = 0.25\n   - 2017 = 0.25\n   - 2016 = 0.24\n   - 2015 = 0.24\n   - 2014 = 0.22\n   Store the assigned value as \"mileage_rate\".\n\n4. Calculate Vehicle Depreciation\n   Compute: \"vehicle_depreciation\" = \"business_miles\" * \"mileage_rate\"\n\n5. Calculate Prior Year Monthly Average\n   Compute: \"<tax_year-1>.monthly_average\" = [\"net_profit_or_loss\" - \"other_income\" + \"depletion\" + \"depreciation\" - \"deductible_meals\" + \"home_business_expenses\" + \"vehicle_depreciation\"] / 12\n   Store as \"prior_year_monthly_avg\".\n\n6. Compare Monthly Averages\n   Assume \"tax_year_monthly_avg\" is provided from the latest \"Tax Form 1040SCHC\" for \"tax_year\".\n   Compute: \"comparison_percentage\" = ((\"tax_year_monthly_avg\" - \"prior_year_monthly_avg\") / \"prior_year_monthly_avg\") * 100\n\n7. Calculate Monthly Income\n   IF (\"comparison_percentage\" \u2265 0) THEN  \n      Compute: \"monthly_income\" = (\"tax_year_monthly_avg\" + \"prior_year_monthly_avg\") / 2  \n   ELSE  \n      Store: \"monthly_income\" = \"tax_year_monthly_avg\"\n\n8. Validate Income Trend\n   IF (\"comparison_percentage\" > 30) THEN  \n      Return Discrepency Message: \"A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" \u2265 0 AND \"comparison_percentage\" \u2264 30) THEN  \n      Return Discrepency Message: \"The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" < 0 AND \"comparison_percentage\" \u2265 -30) THEN  \n      Return Discrepency Message: \"A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\" and terminate the process  \n   ELSE  \n      Return Discrepency Message: \"A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.\" and terminate the process  ",
+                        "discrepancy_messages": "7. A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability. \n8. The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\n9. A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\n10. A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+                        "tasks": [
+                            {
+                                "task_name": "extract_dates_and_years",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Extract the application year from the application_date field. The application_date is provided as a string in one of the formats MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY. Parse this date, identify the year component, and store it as computed_application_year in the format YYYY.",
+                                        "inputs": [
+                                            "'application_date': input_data -> application_date -> value"
+                                        ],
+                                        "formulas": [
+                                            "computed_application_year = extract the year from application_date by splitting the string using delimiters ('/', '-', or '.') and taking the appropriate element representing the year"
+                                        ],
+                                        "outputs": [
+                                            "'computed_application_year': Year extracted from application_date in YYYY format"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_application_year",
+                                            "function_description": "Extracts the year from the application_date field, which is provided as a string in one of the formats: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY. The function parses this date, identifies the year component, and returns it as computed_application_year in the format YYYY.",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "application_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['application_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "Year extracted from application_date in YYYY format"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "extract_document_and_data",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "From the list of Tax Form 1040SCHC in the input data, select the tax form whose tax_year equals (computed_application_year - 1). Once the proper tax form is identified, extract the following fields: (a) tax_year (Tax Return Year in YYYY), (b) business_miles from total_business_miles, (c) net_profit_or_loss, (d) other_income, (e) depletion from depletion_amount, (f) depreciation from depreciation_amount, (g) deductible_meals from deductible_meals_expenses, and (h) home_business_expenses from home_office_expenses. The traversal for these fields is done from the first borrower in 'borrowers' and then within the 'Tax Form 1040SCHC' list.",
+                                        "inputs": [
+                                            "'computed_application_year': output from task extract_dates_and_years -> computed_application_year",
+                                            "'tax_forms': input_data -> borrowers (list) -> first borrower -> Tax Form 1040SCHC (list)"
+                                        ],
+                                        "formulas": [
+                                            "target_year = int(computed_application_year) - 1",
+                                            "For each tax form in Tax Form 1040SCHC, compare the field tax_year -> value with target_year (converted to string) and select the matching form."
+                                        ],
+                                        "outputs": [
+                                            "'tax_year': tax form's tax_year -> value as Tax Return Year (YYYY)",
+                                            "'business_miles': tax form's miles -> total_business_miles -> value",
+                                            "'net_profit_or_loss': tax form's net_profit_or_loss -> value",
+                                            "'other_income': tax form's other_income -> value",
+                                            "'depletion': tax form's depletion_amount -> value",
+                                            "'depreciation': tax form's depreciation_amount -> value",
+                                            "'deductible_meals': tax form's deductible_meals_expenses -> value",
+                                            "'home_business_expenses': tax form's home_office_expenses -> value"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_tax_form_data",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "Year extracted from application_date in YYYY format",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "borrowers",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of borrowers containing their respective Tax Form 1040SCHC data",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "Tax Form 1040SCHC": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "tax_year": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Tax Form 1040SCHC.taxForm1040SCHCTaxReturnYear String (Year)"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "miles": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "total_business_miles": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "value": {
+                                                                                                "type": "integer",
+                                                                                                "description": "Tax Form 1040SCHC.taxForm1040SCHCBusinessMiles Integer"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "net_profit_or_loss": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Tax Form 1040SCHC.taxForm1040SCHCNetprofitorloss String (Currency)"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "other_income": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Tax Form 1040SCHC.taxForm1040SCHCOtherincome String (Currency)"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "depletion_amount": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Tax Form 1040SCHC.taxForm1040SCHCDepletion String (Currency)"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "depreciation_amount": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Tax Form 1040SCHC.taxForm1040SCHCDepreciation String (Currency)"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "deductible_meals_expenses": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Tax Form 1040SCHC.taxForm1040SCHCDeductiblemeals meals String (Currency)"
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "home_office_expenses": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "value": {
+                                                                                        "type": "string",
+                                                                                        "description": "Tax Form 1040SCHC.taxForm1040SCHCExpensesforbusinessuseofyourhome String (Currency)"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "tax_year",
+                                                    "data_type": "String",
+                                                    "description": "Tax Return Year in YYYY format"
+                                                },
+                                                {
+                                                    "field_name": "business_miles",
+                                                    "data_type": "Integer",
+                                                    "description": "Total business miles from the tax form"
+                                                },
+                                                {
+                                                    "field_name": "net_profit_or_loss",
+                                                    "data_type": "String",
+                                                    "description": "Net profit or loss from the tax form"
+                                                },
+                                                {
+                                                    "field_name": "other_income",
+                                                    "data_type": "String",
+                                                    "description": "Other income from the tax form"
+                                                },
+                                                {
+                                                    "field_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "Depletion amount from the tax form"
+                                                },
+                                                {
+                                                    "field_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "Depreciation amount from the tax form"
+                                                },
+                                                {
+                                                    "field_name": "deductible_meals",
+                                                    "data_type": "String",
+                                                    "description": "Deductible meals expenses from the tax form"
+                                                },
+                                                {
+                                                    "field_name": "home_business_expenses",
+                                                    "data_type": "String",
+                                                    "description": "Home business expenses from the tax form"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "assign_mileage_rate",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "Based on the extracted tax_year from the selected Tax Form 1040SCHC, assign the corresponding mileage rate using the provided mapping. Match the tax_year to the following rates: 2025 = 0.33, 2024 = 0.30, 2023 = 0.28, 2022 = 0.26, 2021 = 0.26, 2020 = 0.27, 2019 = 0.26, 2018 = 0.25, 2017 = 0.25, 2016 = 0.24, 2015 = 0.24, 2014 = 0.22. The resulting value should be stored as mileage_rate.",
+                                        "inputs": [
+                                            "'tax_year': output from task extract_document_and_data -> tax_year"
+                                        ],
+                                        "formulas": [
+                                            "Use a lookup structure where: if tax_year == '2025' then mileage_rate = 0.33; if tax_year == '2024' then mileage_rate = 0.30; if tax_year == '2023' then mileage_rate = 0.28; if tax_year == '2022' then mileage_rate = 0.26; if tax_year == '2021' then mileage_rate = 0.26; if tax_year == '2020' then mileage_rate = 0.27; if tax_year == '2019' then mileage_rate = 0.26; if tax_year == '2018' then mileage_rate = 0.25; if tax_year == '2017' then mileage_rate = 0.25; if tax_year == '2016' then mileage_rate = 0.24; if tax_year == '2015' then mileage_rate = 0.24; if tax_year == '2014' then mileage_rate = 0.22"
+                                        ],
+                                        "outputs": [
+                                            "'mileage_rate': Assigned mileage rate based on the tax_year"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "assign_mileage_rate_based_on_tax_year",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "tax_year",
+                                                    "data_type": "String",
+                                                    "description": "Tax Return Year in YYYY format extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['Tax Form 1040SCHC'][0]['tax_year']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "mileage_rate",
+                                                    "data_type": "Float",
+                                                    "description": "Assigned mileage rate based on the tax_year"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_vehicle_depreciation",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "4.a",
+                                        "description": "Calculate vehicle depreciation by multiplying business_miles by the assigned mileage_rate. This value represents the vehicle_depreciation.",
+                                        "inputs": [
+                                            "'business_miles': output from task extract_document_and_data -> business_miles",
+                                            "'mileage_rate': output from task assign_mileage_rate -> mileage_rate"
+                                        ],
+                                        "formulas": [
+                                            "vehicle_depreciation = business_miles * mileage_rate"
+                                        ],
+                                        "outputs": [
+                                            "'vehicle_depreciation': The result of business_miles multiplied by mileage_rate"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_vehicle_depreciation",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "business_miles",
+                                                    "data_type": "Integer",
+                                                    "description": "Total business miles from the tax form, extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.a']['business_miles']"
+                                                },
+                                                {
+                                                    "argument_name": "mileage_rate",
+                                                    "data_type": "Float",
+                                                    "description": "Assigned mileage rate based on the tax_year, extracted from task assign_mileage_rate",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['assign_mileage_rate']['3.a']['mileage_rate']"
+                                                }
+                                            ],
+                                            "return_type": "Float",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "vehicle_depreciation",
+                                                    "data_type": "Float",
+                                                    "description": "The result of business_miles multiplied by mileage_rate"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_prior_year_monthly_average",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "5.a",
+                                        "description": "Compute the prior year's monthly average using the following formula: (net_profit_or_loss - other_income + depletion + depreciation - deductible_meals + home_business_expenses + vehicle_depreciation) / 12. All fields are extracted from the Tax Form 1040SCHC for (computed_application_year - 1), with vehicle_depreciation coming from the result of task calculate_vehicle_depreciation.",
+                                        "inputs": [
+                                            "'net_profit_or_loss': output from task extract_document_and_data -> net_profit_or_loss",
+                                            "'other_income': output from task extract_document_and_data -> other_income",
+                                            "'depletion': output from task extract_document_and_data -> depletion",
+                                            "'depreciation': output from task extract_document_and_data -> depreciation",
+                                            "'deductible_meals': output from task extract_document_and_data -> deductible_meals",
+                                            "'home_business_expenses': output from task extract_document_and_data -> home_business_expenses",
+                                            "'vehicle_depreciation': output from task calculate_vehicle_depreciation -> vehicle_depreciation"
+                                        ],
+                                        "formulas": [
+                                            "prior_year_monthly_avg = (net_profit_or_loss - other_income + depletion + depreciation - deductible_meals + home_business_expenses + vehicle_depreciation) / 12"
+                                        ],
+                                        "outputs": [
+                                            "'prior_year_monthly_avg': Computed average monthly value for the prior year"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compute_prior_year_monthly_average",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "net_profit_or_loss",
+                                                    "data_type": "String",
+                                                    "description": "Net profit or loss from the tax form, extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['Tax Form 1040SCHC'][0]['net_profit_or_loss']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "other_income",
+                                                    "data_type": "String",
+                                                    "description": "Other income from the tax form, extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.a']['other_income']"
+                                                },
+                                                {
+                                                    "argument_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "Depletion amount from the tax form, extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.a']['depletion']"
+                                                },
+                                                {
+                                                    "argument_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "Depreciation amount from the tax form, extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.a']['depreciation']"
+                                                },
+                                                {
+                                                    "argument_name": "deductible_meals",
+                                                    "data_type": "String",
+                                                    "description": "Deductible meals expenses from the tax form, extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.a']['deductible_meals']"
+                                                },
+                                                {
+                                                    "argument_name": "home_business_expenses",
+                                                    "data_type": "String",
+                                                    "description": "Home business expenses from the tax form, extracted from task extract_document_and_data",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['extract_document_and_data']['2.a']['home_business_expenses']"
+                                                },
+                                                {
+                                                    "argument_name": "vehicle_depreciation",
+                                                    "data_type": "Float",
+                                                    "description": "The result of business_miles multiplied by mileage_rate, extracted from task calculate_vehicle_depreciation",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['calculate_vehicle_depreciation']['4.a']['vehicle_depreciation']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "prior_year_monthly_avg",
+                                                    "data_type": "Float",
+                                                    "description": "Computed average monthly value for the prior year"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "compare_monthly_averages",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "6.a",
+                                        "description": "Calculate the comparison percentage by comparing the monthly average for the current tax year (provided as tax_year_monthly_avg) with the computed prior_year_monthly_avg. Use the formula: ((tax_year_monthly_avg - prior_year_monthly_avg) / prior_year_monthly_avg) * 100.",
+                                        "inputs": [
+                                            "'tax_year_monthly_avg': input_data -> (Assume provided from the latest Tax Form 1040SCHC for tax_year)",
+                                            "'prior_year_monthly_avg': output from task calculate_prior_year_monthly_average -> prior_year_monthly_avg"
+                                        ],
+                                        "formulas": [
+                                            "comparison_percentage = ((tax_year_monthly_avg - prior_year_monthly_avg) / prior_year_monthly_avg) * 100"
+                                        ],
+                                        "outputs": [
+                                            "'comparison_percentage': The percentage difference between tax_year_monthly_avg and prior_year_monthly_avg"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_comparison_percentage",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "tax_year_monthly_avg",
+                                                    "data_type": "Float",
+                                                    "description": "Monthly average for the current tax year provided from the latest Tax Form 1040SCHC for tax_year",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_self_employment_cash_flow_analysis']['calculate_monthly_average']['5.a']['monthly_average']"
+                                                },
+                                                {
+                                                    "argument_name": "prior_year_monthly_avg",
+                                                    "data_type": "Float",
+                                                    "description": "Computed prior year monthly average from task calculate_prior_year_monthly_average",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['calculate_prior_year_monthly_average']['5.a']['prior_year_monthly_avg']"
+                                                }
+                                            ],
+                                            "return_type": "Float",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "The percentage difference between tax_year_monthly_avg and prior_year_monthly_avg"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_monthly_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "7.a",
+                                        "description": "Determine the monthly_income based on the value of comparison_percentage. If comparison_percentage is greater than or equal to 0, calculate monthly_income as the average between tax_year_monthly_avg and prior_year_monthly_avg. Otherwise, assign monthly_income the value of tax_year_monthly_avg.",
+                                        "inputs": [
+                                            "'comparison_percentage': output from task compare_monthly_averages -> comparison_percentage",
+                                            "'tax_year_monthly_avg': input_data -> (Assume provided from the latest Tax Form 1040SCHC for tax_year)",
+                                            "'prior_year_monthly_avg': output from task calculate_prior_year_monthly_average -> prior_year_monthly_avg"
+                                        ],
+                                        "formulas": [
+                                            "if comparison_percentage >= 0: monthly_income = (tax_year_monthly_avg + prior_year_monthly_avg) / 2",
+                                            "else: monthly_income = tax_year_monthly_avg"
+                                        ],
+                                        "outputs": [
+                                            "'monthly_income': Calculated monthly income based on the specified conditions"
+                                        ],
+                                        "discrepancy_string": "",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_monthly_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "The percentage difference between tax_year_monthly_avg and prior_year_monthly_avg from task 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['compare_monthly_averages']['6.a']['comparison_percentage']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_year_monthly_avg",
+                                                    "data_type": "Float",
+                                                    "description": "Monthly average income for the tax year from the latest Tax Form 1040SCHC",
+                                                    "argument_schema": null,
+                                                    "data_access_str":"output_data['rule_schedule_c_self_employment_cash_flow_analysis']['calculate_monthly_average']['5.a']['monthly_average']"
+                                                },
+                                                {
+                                                    "argument_name": "prior_year_monthly_avg",
+                                                    "data_type": "Float",
+                                                    "description": "Computed average monthly value for the prior year from task 5.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['calculate_prior_year_monthly_average']['5.a']['prior_year_monthly_avg']"
+                                                }
+                                            ],
+                                            "return_type": "Float",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_income",
+                                                    "data_type": "Float",
+                                                    "description": "Calculated monthly income based on the specified conditions"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_income_trend",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "8.a",
+                                        "description": "Validate the income trend based on the value of comparison_percentage. Implement multiple conditions: (1) If comparison_percentage > 30, return the discrepancy message: 'A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.'; (2) If 0 <= comparison_percentage <= 30, return the discrepancy message: 'The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.'; (3) If -30 <= comparison_percentage < 0, return the discrepancy message: 'A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.'; (4) Otherwise (comparison_percentage < -30), return the discrepancy message: 'A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.'; In all cases, the process should be terminated once the discrepancy message is returned.",
+                                        "inputs": [
+                                            "'comparison_percentage': output from task compare_monthly_averages -> comparison_percentage"
+                                        ],
+                                        "formulas": [
+                                            "if comparison_percentage > 30 then discrepancy_msg = 'A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.'",
+                                            "else if comparison_percentage >= 0 and comparison_percentage <= 30 then discrepancy_msg = 'The borrower\\'s business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.'",
+                                            "else if comparison_percentage < 0 and comparison_percentage >= -30 then discrepancy_msg = 'A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.'",
+                                            "else discrepancy_msg = 'A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.'"
+                                        ],
+                                        "outputs": [
+                                            "'discrepancy_msg': The discrepancy message based on the income trend validation"
+                                        ],
+                                        "discrepancy_string": "Based on the condition triggered, one of the following messages will be returned: 'A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.' OR 'The borrower\\'s business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.' OR 'A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.' OR 'A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.'",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_income_trend",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "The percentage difference between tax_year_monthly_avg and prior_year_monthly_avg from task compare_monthly_averages",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_schedule_c_cash_flow_analysis']['htp_schedule_c_validation']['compare_monthly_averages']['6.a']['comparison_percentage']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The discrepancy message based on the income trend validation"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

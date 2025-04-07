@@ -1,0 +1,229 @@
+[
+    {
+        "name": "rule_verbal_verification_of_employment_consistency",
+        "question": "Is the information on verbal verification of employment, VVOE consistent with Final 1003?",
+        "steps": [
+            {
+                "name": "step_vvoe_final_1003_consistency_check",
+                "fields": "Doc_type \"VVOE\"",
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].URLA",
+                    "borrowers[].VVOE"
+                ],
+                "expert_instructions": "1.  If the below criteria is meet, then proceed ahead, else return the discrepancy message\n   \u25d8 <VVOE.BorrowerName> = <URLA1003.Borrower Name> or <URLA 1003 Additional Borrower.Borrower Name>.\n   \u25d8 <VVOE.EmployerName> =  <URLA1003.Borrower Employer Name> or <URLA1003.1c Borrower Employer Name>.\n   \u25d8  <VVOE.DatesofEmployment> = <URLA1003.1b Start Date> or <URLA1003.1c Start Date>  ",
+                "discrepancy_messages": "1. The details mentioned on verbal verification of employment, VVOE does not match with the details present on the Final 1003",
+                "doc_type_keys": [
+                    "borrowers[].URLA",
+                    "borrowers[].VVOE"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_vvoe_final_1003_consistency_check",
+                        "expert_instructions": "1.  If the below criteria is meet, then proceed ahead, else return the discrepancy message\n   \u25d8 <VVOE.BorrowerName> = <URLA1003.Borrower Name> or <URLA 1003 Additional Borrower.Borrower Name>.\n   \u25d8 <VVOE.EmployerName> =  <URLA1003.Borrower Employer Name> or <URLA1003.1c Borrower Employer Name>.\n   \u25d8  <VVOE.DatesofEmployment> = <URLA1003.1b Start Date> or <URLA1003.1c Start Date>  ",
+                        "discrepancy_messages": "1. The details mentioned on verbal verification of employment, VVOE does not match with the details present on the Final 1003",
+                        "tasks": [
+                            {
+                                "task_name": "validate_vvoe_final_1003_data",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Compare VVOE Borrower Name with URLA1003 Borrower Name and URLA1003 Additional Borrower Borrower Name. In this subtask, extract the value of VVOE.borrower_name from the first item in the VVOE list, extract the URLA1003 borrower name from the URLA.borrower_name field, and extract the URLA1003 Additional Borrower Borrower Name from the additional_employer list (assumed to have a 'borrower_name' field) of the first borrower. If the VVOE.borrower_name equals either the URLA1003 borrower name or the URLA1003 Additional Borrower Borrower Name, then the borrower name is considered consistent; otherwise, return the discrepancy message.",
+                                        "inputs": [
+                                            "'VVOE_borrower_name': input_data -> borrowers (list, index 0) -> VVOE (list, index 0) -> borrower_name -> value",
+                                            "'URLA1003_borrower_name': input_data -> borrowers (list, index 0) -> URLA -> borrower_name -> value",
+                                            "'URLA1003_additional_borrower_name': input_data -> borrowers (list, index 0) -> additional_employer (list, index 0) -> borrower_name -> value"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'is_borrower_name_consistent': Boolean indicating if VVOE Borrower Name matches either URLA1003 Borrower Name or URLA1003 Additional Borrower Borrower Name"
+                                        ],
+                                        "discrepancy_string": "The details mentioned on verbal verification of employment, VVOE does not match with the details present on the Final 1003",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compare_borrower_names",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "vvoe_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted VVOE.borrower_name from the first item in the VVOE list.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['borrower_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "urla1003_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted URLA1003 borrower name from the URLA.borrower_name field.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['borrower_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "urla1003_additional_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted URLA1003 Additional Borrower Borrower Name from the additional_employer list of the first borrower.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['additional_employer'][0]['employer_name']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, String]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "is_borrower_name_consistent",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates if VVOE Borrower Name matches either URLA1003 Borrower Name or URLA1003 Additional Borrower Borrower Name."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if borrower names do not match."
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "1.b",
+                                        "description": "Compare VVOE Employer Name with URLA1003 Borrower Employer Name and URLA1003.1c Borrower Employer Name. In this subtask, extract the VVOE.employer_name from the first VVOE object, extract the URLA1003 employer name from the URLA.employer_name field, and extract the URLA1003.1c employer name from the first item in the additional_employer list. If the VVOE.employer_name equals either the URLA1003 employer name or the URLA1003.1c employer name, then the employer name is consistent; otherwise, return the discrepancy message.",
+                                        "inputs": [
+                                            "'VVOE_employer_name': input_data -> borrowers (list, index 0) -> VVOE (list, index 0) -> employer_name -> value",
+                                            "'URLA1003_employer_name': input_data -> borrowers (list, index 0) -> URLA -> employer_name -> value",
+                                            "'URLA1003.1c_employer_name': input_data -> borrowers (list, index 0) -> additional_employer (list, index 0) -> employer_name -> value"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'is_employer_name_consistent': Boolean indicating if VVOE Employer Name matches either URLA1003 Borrower Employer Name or URLA1003.1c Borrower Employer Name"
+                                        ],
+                                        "discrepancy_string": "The details mentioned on verbal verification of employment, VVOE does not match with the details present on the Final 1003",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compare_employer_names",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "vvoe_employer_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted VVOE.employer_name from the first VVOE object.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['employer_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "urla1003_employer_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted URLA1003 employer name from the URLA.employer_name field.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['employer_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "urla1003_1c_employer_name",
+                                                    "data_type": "String",
+                                                    "description": "Extracted URLA1003.1c employer name from the first item in the additional_employer list.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['additional_employer'][0]['employer_name']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, String]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "is_employer_name_consistent",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates if VVOE Employer Name matches either URLA1003 Borrower Employer Name or URLA1003.1c Borrower Employer Name."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if employer names do not match."
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "1.c",
+                                        "description": "Compare VVOE Dates of Employment with URLA1003.1b Start date and URLA1003.1c Start Date. In this subtask, extract the VVOE start date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)by navigating to the 'dates_of_employment' field and then taking the 'start_date' of the first VVOE object, extract the URLA1003.1b start date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)from the current_employer list within the URLA section, and extract the URLA1003.1c start date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)from the additional_employer list. If the VVOE start date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)is equal to either the URLA1003.1b start date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)or the URLA1003.1c start date, then the dates of employment are considered consistent; otherwise, return the discrepancy message.",
+                                        "inputs": [
+                                            "'VVOE_dates_of_employment_start': input_data -> borrowers (list, index 0) -> VVOE (list, index 0) -> dates_of_employment -> start_date",
+                                            "'URLA1003.1b_start_date': input_data -> borrowers (list, index 0) -> URLA -> current_employer (list, index 0) -> start_date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)-> value",
+                                            "'URLA1003.1c_start_date': input_data -> borrowers (list, index 0) -> additional_employer (list, index 0) -> start_date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)-> value"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'is_dates_of_employment_consistent': Boolean indicating if the VVOE start date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)matches either the URLA1003.1b start date (MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY)or the URLA1003.1c start date"
+                                        ],
+                                        "discrepancy_string": "The details mentioned on verbal verification of employment, VVOE does not match with the details present on the Final 1003",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compare_dates_of_employment",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "vvoe_dates_of_employment_start",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Extracted VVOE start date from the 'dates_of_employment' field of the first VVOE object.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['VVOE'][0]['dates_of_employment']['start_date']"
+                                                },
+                                                {
+                                                    "argument_name": "urla1003_1b_start_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Extracted URLA1003.1b start date from the current_employer list within the URLA section.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['start_date']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "urla1003_1c_start_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Extracted URLA1003.1c start date from the additional_employer list.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['additional_employer'][0]['start_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, String]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "is_dates_of_employment_consistent",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates if the VVOE start date matches either the URLA1003.1b start date or the URLA1003.1c start date."
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message if dates of employment do not match."
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

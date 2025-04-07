@@ -1,0 +1,1227 @@
+[
+  {
+    "name": "rule_1120s_business_documentation_validation",
+    "question": "Is documentation for 1120S business meet as per the disbursement date?",
+    "steps": [
+      {
+        "name": "step_validate_tax_form_presence",
+        "fields": "1120S Business Income",
+        "split_cell": false,
+        "schema_keys": [
+          "other_doc_types.Tax Form 1120S",
+          "borrowers[].Tax Form 1120SSCHK1",
+          "borrowers[].URLA"
+        ],
+        "expert_instructions": "1. Extract Dates and Computed Year\nAction:\n\nFrom the application_date, extract application_year in the form {computed_application_year}.\n\nSet computed_application_year = year(application_date), denoted as YYYY.\n\n\n2. Determine Application Date Scenario\nAction:\n\nIF 01/01/{computed_application_year} \u2264 application_date \u2264 04/14/{computed_application_year} THEN\nSet app_scenario = 1\nELSE IF 04/15/{computed_application_year} \u2264 application_date \u2264 10/14/{computed_application_year} THEN\nSet app_scenario = 2\nELSE IF 10/15/{computed_application_year} \u2264 application_date \u2264 12/31/{computed_application_year} THEN\nSet app_scenario = 3\n\n\n3. Determine Disbursement Date Scenario\nAction:\n\nIF 01/01/{computed_application_year} \u2264 disbursement_date \u2264 04/14/{computed_application_year} THEN\nSet disb_scenario = 1\nELSE IF 04/15/{computed_application_year} \u2264 disbursement_date \u2264 06/30/{computed_application_year} THEN\nSet disb_scenario = 2\nELSE IF 07/01/{computed_application_year} \u2264 disbursement_date \u2264 10/14/{computed_application_year} THEN\nSet disb_scenario = 3\nELSE IF 10/15/{computed_application_year} \u2264 disbursement_date \u2264 12/31/{computed_application_year} THEN\nSet disb_scenario = 4\nELSE IF 01/01/({computed_application_year} + 1) \u2264 disbursement_date \u2264 04/14/({computed_application_year} + 1) THEN\nSet disb_scenario = 5\nELSE IF 04/15/({computed_application_year} + 1) \u2264 disbursement_date \u2264 06/30/({computed_application_year} + 1) THEN\nSet disb_scenario = 6\nELSE IF 07/01/({computed_application_year} + 1) \u2264 disbursement_date \u2264 10/14/({computed_application_year} + 1) THEN\nSet disb_scenario = 7\nELSE IF 10/15/({computed_application_year} + 1) \u2264 disbursement_date \u2264 12/31/({computed_application_year} + 1) THEN\nSet disb_scenario = 8\n\n\n4. Validate Tax Form Presence Based on Scenarios for app_scenario=1\n\n\nIF app_scenario == 1 and disb_scenario in [1, 2, 3] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIF app_scenario == 1 and  disb_scenario in [4, 5, 6, 7, 8] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n\n5. Validate Tax Form Presence Based on Scenarios for app_scenario=2\n\nIF app_scenario == 2 and disb_scenario in [2, 3, 4, 5, 6, 7] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIF app_scenario == 2 and disb_scenario == 8 THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n\n6. Validate Tax Form Presence Based on Scenarios for app_scenario=3\n\nIf app_scenario == 3 and disb_scenario in [4, 5] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified year are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIf app_scenario == 3 and  disb_scenario in [6, 7] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified year are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIf app_scenario == 3 and  disb_scenario == 8 THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year {computed_application_year}) AND (From the List of \"Tax Form 1120S\" if one exists for year {computed_application_year}) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year {computed_application_year}) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified year are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process",
+        "discrepancy_messages": "1. The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n2. The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n3. The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n4. The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n5. The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+        "doc_type_keys": [
+          "borrowers[].Tax Form 1040",
+          "other_doc_types.Tax Form 1120S",
+          "borrowers[].Tax Form 1120SSCHK1",
+          "borrowers[].URLA",
+          "other_doc_types.Tax Form 7004",
+          "borrowers[].Tax Form 4868"
+        ],
+        "htps": [
+          {
+            "name": "htp_validate_tax_form_presence",
+            "expert_instructions": "1. Extract Dates and Computed Year\nAction:\n\nFrom the application_date, extract application_year in the form {computed_application_year}.\n\nSet computed_application_year = year(application_date), denoted as YYYY.\n\n\n2. Determine Application Date Scenario\nAction:\n\nIF 01/01/{computed_application_year} \u2264 application_date \u2264 04/14/{computed_application_year} THEN\nSet app_scenario = 1\nELSE IF 04/15/{computed_application_year} \u2264 application_date \u2264 10/14/{computed_application_year} THEN\nSet app_scenario = 2\nELSE IF 10/15/{computed_application_year} \u2264 application_date \u2264 12/31/{computed_application_year} THEN\nSet app_scenario = 3\n\n\n3. Determine Disbursement Date Scenario\nAction:\n\nIF 01/01/{computed_application_year} \u2264 disbursement_date \u2264 04/14/{computed_application_year} THEN\nSet disb_scenario = 1\nELSE IF 04/15/{computed_application_year} \u2264 disbursement_date \u2264 06/30/{computed_application_year} THEN\nSet disb_scenario = 2\nELSE IF 07/01/{computed_application_year} \u2264 disbursement_date \u2264 10/14/{computed_application_year} THEN\nSet disb_scenario = 3\nELSE IF 10/15/{computed_application_year} \u2264 disbursement_date \u2264 12/31/{computed_application_year} THEN\nSet disb_scenario = 4\nELSE IF 01/01/({computed_application_year} + 1) \u2264 disbursement_date \u2264 04/14/({computed_application_year} + 1) THEN\nSet disb_scenario = 5\nELSE IF 04/15/({computed_application_year} + 1) \u2264 disbursement_date \u2264 06/30/({computed_application_year} + 1) THEN\nSet disb_scenario = 6\nELSE IF 07/01/({computed_application_year} + 1) \u2264 disbursement_date \u2264 10/14/({computed_application_year} + 1) THEN\nSet disb_scenario = 7\nELSE IF 10/15/({computed_application_year} + 1) \u2264 disbursement_date \u2264 12/31/({computed_application_year} + 1) THEN\nSet disb_scenario = 8\n\n\n4. Validate Tax Form Presence Based on Scenarios for app_scenario=1\n\n\nIF app_scenario == 1 and disb_scenario in [1, 2, 3] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIF app_scenario == 1 and  disb_scenario in [4, 5, 6, 7, 8] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n\n5. Validate Tax Form Presence Based on Scenarios for app_scenario=2\n\nIF app_scenario == 2 and disb_scenario in [2, 3, 4, 5, 6, 7] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1) OR ({computed_application_year} - 2)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIF app_scenario == 2 and disb_scenario == 8 THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year {computed_application_year} OR ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified years are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n\n6. Validate Tax Form Presence Based on Scenarios for app_scenario=3\n\nIf app_scenario == 3 and disb_scenario in [4, 5] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified year are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIf app_scenario == 3 and  disb_scenario in [6, 7] THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120S\" if one exists for year ({computed_application_year} - 1)) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year ({computed_application_year} - 1)) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified year are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\nIf app_scenario == 3 and  disb_scenario == 8 THEN\n    IF (From the List of \"Tax Form 1040\" if one exists for year {computed_application_year}) AND (From the List of \"Tax Form 1120S\" if one exists for year {computed_application_year}) AND (From the List of \"Tax Form 1120SSCHK1\" if one exists for year {computed_application_year}) are present THEN\n        Return Discrepancy Message: \"All required tax forms for the specified year are present, satisfying the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process\n    ELSE\n        Return Discrepancy Message: \"The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the 'Allowable Age of Federal Income Tax Returns' requirement.\"\n        Terminate the process",
+            "discrepancy_messages": "1. The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n2. The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n3. The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n4. The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the \"Allowable Age of Federal Income Tax Returns\" requirement.\n\n5. The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+            "tasks": [
+              {
+                "task_name": "extract_dates_and_compute_year",
+                "subtasks": [
+                  {
+                    "subtask_id": "1.a",
+                    "description": "Extract the computed_application_year from the application_date. Parse the value of application_date (provided in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY format), then extract the year component (YYYY) and assign it to computed_application_year.",
+                    "inputs": [
+                      "'application_date': input_data -> 'application_date' -> 'value'"
+                    ],
+                    "formulas": [
+                      "computed_application_year = year(application_date)"
+                    ],
+                    "outputs": [
+                      "'computed_application_year': The four-digit year (YYYY) extracted from the application_date"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "extract_computed_application_year",
+                      "function_description": "Extracts the year from the application_date and assigns it to computed_application_year.",
+                      "arguments": [
+                        {
+                          "argument_name": "application_date",
+                          "data_type": "String (Date)",
+                          "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['application_date']['value']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "determine_application_date_scenario",
+                "subtasks": [
+                  {
+                    "subtask_id": "2.a",
+                    "description": "Determine the application scenario (app_scenario) based on the application_date. Use the computed_application_year from Task 1 and compare application_date with the following intervals: if the date is between 01/01/{computed_application_year} and 04/14/{computed_application_year} then assign app_scenario = 1; if between 04/15/{computed_application_year} and 10/14/{computed_application_year} then assign app_scenario = 2; if between 10/15/{computed_application_year} and 12/31/{computed_application_year} then assign app_scenario = 3.",
+                    "inputs": [
+                      "'application_date': input_data -> 'application_date' -> 'value'",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "IF (01/01/{computed_application_year} <= application_date <= 04/14/{computed_application_year}) THEN app_scenario = 1",
+                      "ELSE IF (04/15/{computed_application_year} <= application_date <= 10/14/{computed_application_year}) THEN app_scenario = 2",
+                      "ELSE IF (10/15/{computed_application_year} <= application_date <= 12/31/{computed_application_year}) THEN app_scenario = 3"
+                    ],
+                    "outputs": [
+                      "'app_scenario': An integer value (1, 2, or 3) representing the application date scenario"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "determine_application_scenario",
+                      "arguments": [
+                        {
+                          "argument_name": "application_date",
+                          "data_type": "String",
+                          "description": "The application date to determine the scenario. Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['application_date']['value']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date. Output from task extract_dates_and_compute_year (1.a)",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Integer",
+                      "return_description": [
+                        {
+                          "field_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "determine_disbursement_date_scenario",
+                "subtasks": [
+                  {
+                    "subtask_id": "3.a",
+                    "description": "Determine the disbursement scenario (disb_scenario) based on disbursement_date. Using computed_application_year from Task 1, compare disbursement_date with the following intervals: 01/01/{computed_application_year} to 04/14/{computed_application_year} (scenario 1), 04/15/{computed_application_year} to 06/30/{computed_application_year} (scenario 2), 07/01/{computed_application_year} to 10/14/{computed_application_year} (scenario 3), 10/15/{computed_application_year} to 12/31/{computed_application_year} (scenario 4), 01/01/{computed_application_year+1} to 04/14/{computed_application_year+1} (scenario 5), 04/15/{computed_application_year+1} to 06/30/{computed_application_year+1} (scenario 6), 07/01/{computed_application_year+1} to 10/14/{computed_application_year+1} (scenario 7), and 10/15/{computed_application_year+1} to 12/31/{computed_application_year+1} (scenario 8).",
+                    "inputs": [
+                      "'disbursement_date': input_data -> 'disbursement_date' -> 'value'",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "IF (01/01/{computed_application_year} <= disbursement_date <= 04/14/{computed_application_year}) THEN disb_scenario = 1",
+                      "ELSE IF (04/15/{computed_application_year} <= disbursement_date <= 06/30/{computed_application_year}) THEN disb_scenario = 2",
+                      "ELSE IF (07/01/{computed_application_year} <= disbursement_date <= 10/14/{computed_application_year}) THEN disb_scenario = 3",
+                      "ELSE IF (10/15/{computed_application_year} <= disbursement_date <= 12/31/{computed_application_year}) THEN disb_scenario = 4",
+                      "ELSE IF (01/01/{computed_application_year + 1} <= disbursement_date <= 04/14/{computed_application_year + 1}) THEN disb_scenario = 5",
+                      "ELSE IF (04/15/{computed_application_year + 1} <= disbursement_date <= 06/30/{computed_application_year + 1}) THEN disb_scenario = 6",
+                      "ELSE IF (07/01/{computed_application_year + 1} <= disbursement_date <= 10/14/{computed_application_year + 1}) THEN disb_scenario = 7",
+                      "ELSE IF (10/15/{computed_application_year + 1} <= disbursement_date <= 12/31/{computed_application_year + 1}) THEN disb_scenario = 8"
+                    ],
+                    "outputs": [
+                      "'disb_scenario': An integer value (1 to 8) representing the disbursement date scenario"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "determine_disbursement_scenario",
+                      "function_description": "Determine the disbursement scenario based on the disbursement_date and computed_application_year. The function compares the disbursement_date with predefined intervals to assign a scenario number.",
+                      "arguments": [
+                        {
+                          "argument_name": "disbursement_date",
+                          "data_type": "String (Date)",
+                          "description": "The date of disbursement in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['disbursement_date']['value']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date. Output from task extract_dates_and_compute_year (1.a).",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Integer",
+                      "return_description": [
+                        {
+                          "field_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "validate_tax_form_presence_scenario_app1",
+                "subtasks": [
+                  {
+                    "subtask_id": "4.a",
+                    "description": "For app_scenario equal to 1 and disb_scenario in [1, 2, 3], validate the presence of required tax forms. Check the list of 'Tax Form 1040' for a tax return with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2), as well as the corresponding 'Tax Form 1120S' and 'Tax Form 1120SSCHK1' for the same years. If all required forms are present, return a discrepancy message that states: 'All required tax forms for the specified years are present, satisfying the \"Allowable Age of Federal Income Tax Returns\" requirement.' If any of the forms is absent, return a discrepancy message: 'The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.' Terminate the process.",
+                    "inputs": [
+                      "'app_scenario': output from task determine_application_date_scenario (2.a) -> 'app_scenario'",
+                      "'disb_scenario': output from task determine_disbursement_date_scenario (3.a) -> 'disb_scenario'",
+                      "'Tax Form 1040 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1040' (list, filter by tax_year in (computed_application_year - 1) OR (computed_application_year - 2))",
+                      "'Tax Form 1120S list': input_data -> 'other_doc_types' -> 'Tax Form 1120S' (list, filter by tax_year in (computed_application_year - 1) OR (computed_application_year - 2))",
+                      "'Tax Form 1120SSCHK1 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1120SSCHK1' (list, filter by tax_year in (computed_application_year - 1) OR (computed_application_year - 2))",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "Check if at least one Tax Form 1040 exists with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2)",
+                      "Check if at least one Tax Form 1120S exists with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2)",
+                      "Check if at least one Tax Form 1120SSCHK1 exists with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2)"
+                    ],
+                    "outputs": [
+                      "'discrepancy_msg': A string containing either the confirmation message that all required tax forms are present or the appropriate discrepancy message"
+                    ],
+                    "discrepancy_string": "The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": true,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_tax_forms_scenario_1_3",
+                      "arguments": [
+                        {
+                          "argument_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario. Output from task 2.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_application_date_scenario']['2.a']['app_scenario']"
+                        },
+                        {
+                          "argument_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario. Output from task 3.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_disbursement_date_scenario']['3.a']['disb_scenario']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 for each borrower, filtered by tax_year in (computed_application_year - 1) OR (computed_application_year - 2)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "borrower_first_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "borrower_last_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S, filtered by tax_year in (computed_application_year - 1) OR (computed_application_year - 2)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "business_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 for each borrower, filtered by tax_year in (computed_application_year - 1) OR (computed_application_year - 2)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "shareholder_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date. Output from task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string containing either the confirmation message that all required tax forms are present or the appropriate discrepancy message"
+                        },
+                        {
+                          "field_name": "terminate_htp",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether to terminate the HTP"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "4.b",
+                    "description": "For app_scenario equal to 1 and disb_scenario in [4, 5, 6, 7, 8], validate the presence of required tax forms. Here, check the list of 'Tax Form 1040' for a tax return with tax_year equal to computed_application_year OR (computed_application_year - 1), along with the corresponding 'Tax Form 1120S' and 'Tax Form 1120SSCHK1' for the same years. If all forms are present, return the confirmation discrepancy message; otherwise, return the message: 'The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.' Terminate the process.",
+                    "inputs": [
+                      "'app_scenario': output from task determine_application_date_scenario (2.a) -> 'app_scenario'",
+                      "'disb_scenario': output from task determine_disbursement_date_scenario (3.a) -> 'disb_scenario'",
+                      "'Tax Form 1040 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1040' (list, filter by tax_year in computed_application_year OR (computed_application_year - 1))",
+                      "'Tax Form 1120S list': input_data -> 'other_doc_types' -> 'Tax Form 1120S' (list, filter by tax_year in computed_application_year OR (computed_application_year - 1))",
+                      "'Tax Form 1120SSCHK1 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1120SSCHK1' (list, filter by tax_year in computed_application_year OR (computed_application_year - 1))",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "Check if at least one Tax Form 1040 exists with tax_year equal to computed_application_year OR (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120S exists with tax_year equal to computed_application_year OR (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120SSCHK1 exists with tax_year equal to computed_application_year OR (computed_application_year - 1)"
+                    ],
+                    "outputs": [
+                      "'discrepancy_msg': A string containing either the confirmation message that all required tax forms are present or the appropriate discrepancy message"
+                    ],
+                    "discrepancy_string": "The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": true,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_tax_forms_scenario_4_8",
+                      "arguments": [
+                        {
+                          "argument_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario. Output from task 2.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_application_date_scenario']['2.a']['app_scenario']"
+                        },
+                        {
+                          "argument_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario. Output from task 3.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_disbursement_date_scenario']['3.a']['disb_scenario']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 for each borrower, filtered by tax_year in computed_application_year OR (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "borrower_first_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "borrower_last_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S, filtered by tax_year in computed_application_year OR (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "business_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 for each borrower, filtered by tax_year in computed_application_year OR (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "shareholder_name": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date. Output from task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string containing either the confirmation message that all required tax forms are present or the appropriate discrepancy message"
+                        },
+                        {
+                          "field_name": "terminate_htp",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether to terminate the HTP"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "validate_tax_form_presence_scenario_app2",
+                "subtasks": [
+                  {
+                    "subtask_id": "5.a",
+                    "description": "For app_scenario equal to 2 and disb_scenario in [2, 3, 4, 5, 6, 7], validate the presence of required tax forms. In this case, check that there exists at least one 'Tax Form 1040' with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2), along with the corresponding 'Tax Form 1120S' and 'Tax Form 1120SSCHK1' for the same years. If all forms are found, return the confirmation message; if not, return the discrepancy message: 'The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the \"Allowable Age of Federal Income Tax Returns\" requirement.' Terminate the process.",
+                    "inputs": [
+                      "'app_scenario': output from task determine_application_date_scenario (2.a) -> 'app_scenario'",
+                      "'disb_scenario': output from task determine_disbursement_date_scenario (3.a) -> 'disb_scenario'",
+                      "'Tax Form 1040 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1040' (list, filter by tax_year in (computed_application_year - 1) OR (computed_application_year - 2))",
+                      "'Tax Form 1120S list': input_data -> 'other_doc_types' -> 'Tax Form 1120S' (list, filter by tax_year in (computed_application_year - 1) OR (computed_application_year - 2))",
+                      "'Tax Form 1120SSCHK1 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1120SSCHK1' (list, filter by tax_year in (computed_application_year - 1) OR (computed_application_year - 2))",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "Check if at least one Tax Form 1040 exists with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2)",
+                      "Check if at least one Tax Form 1120S exists with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2)",
+                      "Check if at least one Tax Form 1120SSCHK1 exists with tax_year equal to (computed_application_year - 1) OR (computed_application_year - 2)"
+                    ],
+                    "outputs": [
+                      "'discrepancy_msg': A string that either confirms all required tax forms are present or provides the appropriate discrepancy message"
+                    ],
+                    "discrepancy_string": "The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; alternatively, the prior year(s) may be accepted if accompanied by a copy of IRS Form 7004 and/or IRS Form 4868, proof of e-filing for the respective tax extension(s), and confirmation of electronic payment(s). The current documentation does not fulfill the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": true,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_tax_forms_scenario_2_to_7",
+                      "arguments": [
+                        {
+                          "argument_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario. Output from task determine_application_date_scenario (2.a).",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_application_date_scenario']['2.a']['app_scenario']"
+                        },
+                        {
+                          "argument_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario. Output from task determine_disbursement_date_scenario (3.a).",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_disbursement_date_scenario']['3.a']['disb_scenario']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 for each borrower, filtered by tax_year in (computed_application_year - 1) OR (computed_application_year - 2).",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S, filtered by tax_year in (computed_application_year - 1) OR (computed_application_year - 2).",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.Year Start String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 for each borrower, filtered by tax_year in (computed_application_year - 1) OR (computed_application_year - 2).",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1TaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date. Output from task extract_dates_and_compute_year (1.a).",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string that either confirms all required tax forms are present or provides the appropriate discrepancy message."
+                        },
+                        {
+                          "field_name": "terminate_htp",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether to terminate the HTP."
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "5.b",
+                    "description": "For app_scenario equal to 2 and disb_scenario equal to 8, validate the presence of required tax forms. Check that there exists at least one 'Tax Form 1040' with tax_year equal to computed_application_year OR (computed_application_year - 1), along with the corresponding 'Tax Form 1120S' and 'Tax Form 1120SSCHK1' for the same years. If all required forms are present, return the confirmation message; if not, return the discrepancy message: 'The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.' Terminate the process.",
+                    "inputs": [
+                      "'app_scenario': output from task determine_application_date_scenario (2.a) -> 'app_scenario'",
+                      "'disb_scenario': output from task determine_disbursement_date_scenario (3.a) -> 'disb_scenario'",
+                      "'Tax Form 1040 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1040' (list, filter by tax_year in computed_application_year OR (computed_application_year - 1))",
+                      "'Tax Form 1120S list': input_data -> 'other_doc_types' -> 'Tax Form 1120S' (list, filter by tax_year in computed_application_year OR (computed_application_year - 1))",
+                      "'Tax Form 1120SSCHK1 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1120SSCHK1' (list, filter by tax_year in computed_application_year OR (computed_application_year - 1))",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "Check if at least one Tax Form 1040 exists with tax_year equal to computed_application_year OR (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120S exists with tax_year equal to computed_application_year OR (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120SSCHK1 exists with tax_year equal to computed_application_year OR (computed_application_year - 1)"
+                    ],
+                    "outputs": [
+                      "'discrepancy_msg': A string containing either the confirmation message or the appropriate discrepancy message"
+                    ],
+                    "discrepancy_string": "The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": true,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_tax_forms_scenario_8",
+                      "arguments": [
+                        {
+                          "argument_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario. Output from task determine_application_date_scenario (2.a).",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_application_date_scenario']['2.a']['app_scenario']"
+                        },
+                        {
+                          "argument_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario. Output from task determine_disbursement_date_scenario (3.a).",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_disbursement_date_scenario']['3.a']['disb_scenario']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 for each borrower, filtered by tax_year in computed_application_year OR (computed_application_year - 1).",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S, filtered by tax_year in computed_application_year OR (computed_application_year - 1).",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.Year Start String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 for each borrower, filtered by tax_year in computed_application_year OR (computed_application_year - 1).",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1TaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date. Output from task extract_dates_and_compute_year (1.a).",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string containing either the confirmation message or the appropriate discrepancy message."
+                        },
+                        {
+                          "field_name": "terminate_htp",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether to terminate the HTP."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "validate_tax_form_presence_scenario_app3",
+                "subtasks": [
+                  {
+                    "subtask_id": "6.a",
+                    "description": "For app_scenario equal to 3 and disb_scenario in [4, 5], validate the presence of required tax forms. Check that there exists at least one 'Tax Form 1040' with tax_year equal to (computed_application_year - 1), along with the corresponding 'Tax Form 1120S' and 'Tax Form 1120SSCHK1' for the same year. If all required forms are present, return a confirmation message; if not, return the discrepancy message: 'The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.' Terminate the process.",
+                    "inputs": [
+                      "'app_scenario': output from task determine_application_date_scenario (2.a) -> 'app_scenario'",
+                      "'disb_scenario': output from task determine_disbursement_date_scenario (3.a) -> 'disb_scenario'",
+                      "'Tax Form 1040 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1040' (list, filter by tax_year equal to (computed_application_year - 1))",
+                      "'Tax Form 1120S list': input_data -> 'other_doc_types' -> 'Tax Form 1120S' (list, filter by tax_year equal to (computed_application_year - 1))",
+                      "'Tax Form 1120SSCHK1 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1120SSCHK1' (list, filter by tax_year equal to (computed_application_year - 1))",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "Check if at least one Tax Form 1040 exists with tax_year equal to (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120S exists with tax_year equal to (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120SSCHK1 exists with tax_year equal to (computed_application_year - 1)"
+                    ],
+                    "outputs": [
+                      "'discrepancy_msg': A string confirming required tax forms or stating the appropriate discrepancy message"
+                    ],
+                    "discrepancy_string": "The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": true,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_tax_forms_scenario_6a",
+                      "arguments": [
+                        {
+                          "argument_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario from task 2.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_application_date_scenario']['2.a']['app_scenario']"
+                        },
+                        {
+                          "argument_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario from task 3.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_disbursement_date_scenario']['3.a']['disb_scenario']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 filtered by tax_year equal to (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S filtered by tax_year equal to (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.Year Start String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 filtered by tax_year equal to (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1TaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date from task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string confirming required tax forms or stating the appropriate discrepancy message"
+                        },
+                        {
+                          "field_name": "terminate_htp",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether to terminate the HTP"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "6.b",
+                    "description": "For app_scenario equal to 3 and disb_scenario in [6, 7], validate the presence of required tax forms. Verify that there exists at least one 'Tax Form 1040', one 'Tax Form 1120S', and one 'Tax Form 1120SSCHK1' with tax_year equal to (computed_application_year - 1). If all exist, return the confirmation message; if not, return the discrepancy message: 'The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.' Terminate the process.",
+                    "inputs": [
+                      "'app_scenario': output from task determine_application_date_scenario (2.a) -> 'app_scenario'",
+                      "'disb_scenario': output from task determine_disbursement_date_scenario (3.a) -> 'disb_scenario'",
+                      "'Tax Form 1040 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1040' (list, filter by tax_year equal to (computed_application_year - 1))",
+                      "'Tax Form 1120S list': input_data -> 'other_doc_types' -> 'Tax Form 1120S' (list, filter by tax_year equal to (computed_application_year - 1))",
+                      "'Tax Form 1120SSCHK1 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1120SSCHK1' (list, filter by tax_year equal to (computed_application_year - 1))",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "Check if at least one Tax Form 1040 exists with tax_year equal to (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120S exists with tax_year equal to (computed_application_year - 1)",
+                      "Check if at least one Tax Form 1120SSCHK1 exists with tax_year equal to (computed_application_year - 1)"
+                    ],
+                    "outputs": [
+                      "'discrepancy_msg': A string with the confirmation or discrepancy message"
+                    ],
+                    "discrepancy_string": "The most recent year\u2019s personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) are required; however, the prior year(s) may also be acceptable if the most recent return is unavailable. However, neither of the tax returns is present; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": true,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_tax_forms_scenario_6b",
+                      "arguments": [
+                        {
+                          "argument_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario from task 2.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_application_date_scenario']['2.a']['app_scenario']"
+                        },
+                        {
+                          "argument_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario from task 3.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_disbursement_date_scenario']['3.a']['disb_scenario']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 filtered by tax_year equal to (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S filtered by tax_year equal to (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.Year Start String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 filtered by tax_year equal to (computed_application_year - 1)",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1TaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date from task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string with the confirmation or discrepancy message"
+                        },
+                        {
+                          "field_name": "terminate_htp",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether to terminate the HTP"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "6.c",
+                    "description": "For app_scenario equal to 3 and disb_scenario equal to 8, validate that there is at least one 'Tax Form 1040', one 'Tax Form 1120S', and one 'Tax Form 1120SSCHK1' with tax_year equal to computed_application_year. If all required forms are present, return the confirmation message; if not, return the discrepancy message: 'The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.' Terminate the process.",
+                    "inputs": [
+                      "'app_scenario': output from task determine_application_date_scenario (2.a) -> 'app_scenario'",
+                      "'disb_scenario': output from task determine_disbursement_date_scenario (3.a) -> 'disb_scenario'",
+                      "'Tax Form 1040 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1040' (list, filter by tax_year equal to computed_application_year)",
+                      "'Tax Form 1120S list': input_data -> 'other_doc_types' -> 'Tax Form 1120S' (list, filter by tax_year equal to computed_application_year)",
+                      "'Tax Form 1120SSCHK1 list': input_data -> 'borrowers' -> each borrower -> 'Tax Form 1120SSCHK1' (list, filter by tax_year equal to computed_application_year)",
+                      "'computed_application_year': output from task extract_dates_and_compute_year (1.a) -> 'computed_application_year'"
+                    ],
+                    "formulas": [
+                      "Check if at least one Tax Form 1040 exists with tax_year equal to computed_application_year",
+                      "Check if at least one Tax Form 1120S exists with tax_year equal to computed_application_year",
+                      "Check if at least one Tax Form 1120SSCHK1 exists with tax_year equal to computed_application_year"
+                    ],
+                    "outputs": [
+                      "'discrepancy_msg': A string with either the confirmation message or the appropriate discrepancy message"
+                    ],
+                    "discrepancy_string": "The personal tax return (Form 1040) and/or Business Tax Return (Form 1120S) for the most recent year are required, which is not present. The use of Business Tax Extensions (IRS Form 7004) and/or Personal Tax Extensions (IRS Form 4868) is not permitted; therefore, the documentation does not satisfy the \"Allowable Age of Federal Income Tax Returns\" requirement.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "skip_to_process": null,
+                    "terminate_htp": true,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_tax_forms_scenario_6c",
+                      "arguments": [
+                        {
+                          "argument_name": "app_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1, 2, or 3) representing the application date scenario from task 2.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_application_date_scenario']['2.a']['app_scenario']"
+                        },
+                        {
+                          "argument_name": "disb_scenario",
+                          "data_type": "Integer",
+                          "description": "An integer value (1 to 8) representing the disbursement date scenario from task 3.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['determine_disbursement_date_scenario']['3.a']['disb_scenario']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 filtered by tax_year equal to computed_application_year",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120s_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120S filtered by tax_year equal to computed_application_year",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120S.Year Start String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120S']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120sschk1_list",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SSCHK1 filtered by tax_year equal to computed_application_year",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SSCHK1.taxForm1120SSCHK1TaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1120SSCHK1']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "The four-digit year (YYYY) extracted from the application_date from task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_1120s_business_documentation_validation']['htp_validate_tax_form_presence']['extract_dates_and_compute_year']['1.a']['computed_application_year']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string with either the confirmation message or the appropriate discrepancy message"
+                        },
+                        {
+                          "field_name": "terminate_htp",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether to terminate the HTP"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,1588 @@
+[
+    {
+        "name": "rule_self_employment_cash_flow_analysis_1065",
+        "question": "Is self employment cash flow analysis for 1065 business completed?",
+        "steps": [
+            {
+                "name": "step_extract_and_validate_1065schk1",
+                "fields": "1065 Business \u2192 \nCalculation",
+                "split_cell": false,
+                "schema_keys": [
+                    "other_doc_types.Tax Form 1065",
+                    "borrowers[].Tax Form 1065SCHK1",
+                    "borrowers[].URLA"
+                ],
+                "expert_instructions": "   1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n\n   2. Extract Document and Validate Consistency\n   From List of Tax Form 1065SCHK1, pick the one for the year {computed_application_year}-1 and extract:\n   - \"schk1_tax_year\" as <Tax Form 1065SCHK1.Tax Year> in the form YYYY.\n   - \"schk1_business_name\" as <Tax Form 1065SCHK1.BusinessName>.\n   - \"schk1_borrower_name\" as <Tax Form 1065SCHK1.BorrowerName>.\n   - \"capital_ending\" as <Capital Ending>.\n   - \"final_k1\" as <Final K-1>.\n   - \"ordinary_business_income\" as <Ordinary business income>.\n   - \"net_rental_real_estate_income\" as <Net rental real estate income>.\n   - \"other_net_rental_income\" as <Other net rental income>.\n   - \"k1_distributions\" as <K-1 Distributions>.\n   Validate:\n   - \"schk1_tax_year\" = <Tax Form 1065.Tax Year>.\n   - \"schk1_business_name\" = <Tax Form 1065.BusinessName> = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"schk1_borrower_name\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name> OR <\"Name\" present under \"ALIASES\" column for the borrower in IDP+>.\n\n3. Validate Capital Ending (seperate both checks into different subtasks )\n   - IF (\"capital_ending\" > 25) THEN  \n      Skip to Step 4  ( ie, Validate Final K-1 Status)\n   - IF the condition is not met, THEN   \n      Return Discrepency Message: \"As per Schedule K-1 (Form 1065) the capital ending % is less than 25% and borrower cannot be considered as self-employed.\" and terminate the process  \n\n4. Validate Final K-1 Status (seperate both checks into different subtasks )\n    - IF (\"final_k1\" == false) THEN  \n      Proceed to Step 5  (ie, Calculate and Select K-1 Income)\n   - IF the condition is not met, THEN  \n      Return Discrepency Message: \"As per Schedule K-1 (Form 1065), it is Final K-1, validate if the business is still active and gather appropriate documentation.\" and terminate the process  \n\n5. Calculate and Select K-1 Income\n   Compute: \"k1_income\" = \"ordinary_business_income\" + \"net_rental_real_estate_income\" + \"other_net_rental_income\"\n   IF (\"k1_income\" < \"k1_distributions\" AND \"k1_income\" < 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\"  \n   ELSE IF (\"k1_income\" > \"k1_distributions\" AND \"k1_distributions\" != 0) THEN  \n      Store \"k1_distributions\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE IF (\"k1_distributions\" == 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE  \n      Store \"k1_income\" as \"selected_k1_value\"\n\n6. Extract Tax Form 1065 Data\n   From List of Tax Form 1065, pick the one for the year ({computed_application_year}-1):\n   - \"1065_tax_year\" as <Tax Form 1065.Tax Year> = \"schk1_tax_year\".\n   - \"1065_business_name\" as <Tax Form 1065.BusinessName> = \"schk1_business_name\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   Extract:\n   - \"ordinary_income_loss\" as <Ordinary income loss>.\n   - \"nonrecurring_other_income\" as <Nonrecurring Other Income>.\n   - \"depreciation\" as <Depreciation>.\n   - \"depletion\" as <Depletion>.\n   - \"short_term_debt\" as <Mortgage, Notes, Bonds payable < 1 Year>.\n   - \"travel_entertainment\" as <Travel & Entertainment Expenses>.\n   - \"ending_capital\" as <Ending Capital>.\n\n7. Calculate Business Income\n   Compute: \"subtotal_business_income\" = \"ordinary_income_loss\" - \"nonrecurring_other_income\" + \"depreciation\" + \"depletion\" - \"short_term_debt\" - \"travel_entertainment\"\n   Compute: \"borrower_share_business_income\" = (\"ending_capital\" / 100) * \"subtotal_business_income\"\n\n8. Calculate Monthly Average\n   Extract: \"total_guaranteed_payments\" as <Total Guaranteed Payments to Partners> from \"Tax Form 1065\".\n   Compute: \"<schk1_tax_year>.monthly_average\" = (\"borrower_share_business_income\" + \"total_guaranteed_payments\" + \"selected_k1_value\") / 12\n\n9. Decision Flow (seperate both checks into different subtasks )\n   - IF (Another version of the doc_type \"Tax Form 1065\" and \"Tax Form 1065SCHK1\" is present for the same borrower and business) THEN  \n      Skip to Process \"1065 Business \u2192 Trend Analysis\"  \n   - IF the condition is not met, THEN  \n      Skip to Step 10 (ie, Store and Validate Monthly Income)\n\n---\n\n10. Store and Validate Monthly Income  \n   Store \"<schk1_tax_year>.monthly_average\" as \"monthly_income\" and  \n   Return Discrepency Message: \"Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.\" and terminate the process  \n\n",
+                "discrepancy_messages": "2. As per Schedule K-1 (Form 1065) the capital ending % is less than 25% and borrower cannot be considered as self-employed.\n\n3. As per Schedule K-1 (Form 1065), it is Final K-1, validate if the business is still active and gather appropriate documentation\n\n4. c. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n4. d In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n9. Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                "doc_type_keys": [
+                    "other_doc_types.Tax Form 1065",
+                    "borrowers[].Tax Form 1065SCHK1",
+                    "borrowers[].Tax Form 1065",
+                    "borrowers[].URLA"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_extract_and_validate_1065schk1",
+                        "expert_instructions": "   1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n\n\n   2. Extract Document and Validate Consistency\n   From List of Tax Form 1065SCHK1, pick the one for the year {computed_application_year}-1 and extract:\n   - \"schk1_tax_year\" as <Tax Form 1065SCHK1.Tax Year> in the form YYYY.\n   - \"schk1_business_name\" as <Tax Form 1065SCHK1.BusinessName>.\n   - \"schk1_borrower_name\" as <Tax Form 1065SCHK1.BorrowerName>.\n   - \"capital_ending\" as <Capital Ending>.\n   - \"final_k1\" as <Final K-1>.\n   - \"ordinary_business_income\" as <Ordinary business income>.\n   - \"net_rental_real_estate_income\" as <Net rental real estate income>.\n   - \"other_net_rental_income\" as <Other net rental income>.\n   - \"k1_distributions\" as <K-1 Distributions>.\n   Validate:\n   - \"schk1_tax_year\" = <Tax Form 1065.Tax Year>.\n   - \"schk1_business_name\" = <Tax Form 1065.BusinessName> = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"schk1_borrower_name\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name> OR <\"Name\" present under \"ALIASES\" column for the borrower in IDP+>.\n\n3. Validate Capital Ending (seperate both checks into different subtasks )\n   - IF (\"capital_ending\" > 25) THEN  \n      Skip to Step 4  ( ie, Validate Final K-1 Status)\n   - IF the condition is not met, THEN   \n      Return Discrepency Message: \"As per Schedule K-1 (Form 1065) the capital ending % is less than 25% and borrower cannot be considered as self-employed.\" and terminate the process  \n\n4. Validate Final K-1 Status (seperate both checks into different subtasks )\n    - IF (\"final_k1\" == false) THEN  \n      Proceed to Step 5  (ie, Calculate and Select K-1 Income)\n   - IF the condition is not met, THEN  \n      Return Discrepency Message: \"As per Schedule K-1 (Form 1065), it is Final K-1, validate if the business is still active and gather appropriate documentation.\" and terminate the process  \n\n5. Calculate and Select K-1 Income\n   Compute: \"k1_income\" = \"ordinary_business_income\" + \"net_rental_real_estate_income\" + \"other_net_rental_income\"\n   IF (\"k1_income\" < \"k1_distributions\" AND \"k1_income\" < 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\"  \n   ELSE IF (\"k1_income\" > \"k1_distributions\" AND \"k1_distributions\" != 0) THEN  \n      Store \"k1_distributions\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE IF (\"k1_distributions\" == 0) THEN  \n      Store \"k1_income\" as \"selected_k1_value\" and  \n      Return Discrepency Message: \"In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\"  \n   ELSE  \n      Store \"k1_income\" as \"selected_k1_value\"\n\n6. Extract Tax Form 1065 Data\n   From List of Tax Form 1065, pick the one for the year ({computed_application_year}-1):\n   - \"1065_tax_year\" as <Tax Form 1065.Tax Year> = \"schk1_tax_year\".\n   - \"1065_business_name\" as <Tax Form 1065.BusinessName> = \"schk1_business_name\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   Extract:\n   - \"ordinary_income_loss\" as <Ordinary income loss>.\n   - \"nonrecurring_other_income\" as <Nonrecurring Other Income>.\n   - \"depreciation\" as <Depreciation>.\n   - \"depletion\" as <Depletion>.\n   - \"short_term_debt\" as <Mortgage, Notes, Bonds payable < 1 Year>.\n   - \"travel_entertainment\" as <Travel & Entertainment Expenses>.\n   - \"ending_capital\" as <Ending Capital>.\n\n7. Calculate Business Income\n   Compute: \"subtotal_business_income\" = \"ordinary_income_loss\" - \"nonrecurring_other_income\" + \"depreciation\" + \"depletion\" - \"short_term_debt\" - \"travel_entertainment\"\n   Compute: \"borrower_share_business_income\" = (\"ending_capital\" / 100) * \"subtotal_business_income\"\n\n8. Calculate Monthly Average\n   Extract: \"total_guaranteed_payments\" as <Total Guaranteed Payments to Partners> from \"Tax Form 1065\".\n   Compute: \"<schk1_tax_year>.monthly_average\" = (\"borrower_share_business_income\" + \"total_guaranteed_payments\" + \"selected_k1_value\") / 12\n\n9. Decision Flow (seperate both checks into different subtasks )\n   - IF (Another version of the doc_type \"Tax Form 1065\" and \"Tax Form 1065SCHK1\" is present for the same borrower and business) THEN  \n      Skip to Process \"1065 Business \u2192 Trend Analysis\"  \n   - IF the condition is not met, THEN  \n      Skip to Step 10 (ie, Store and Validate Monthly Income)\n\n---\n\n10. Store and Validate Monthly Income  \n   Store \"<schk1_tax_year>.monthly_average\" as \"monthly_income\" and  \n   Return Discrepency Message: \"Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.\" and terminate the process  \n\n",
+                        "discrepancy_messages": "2. As per Schedule K-1 (Form 1065) the capital ending % is less than 25% and borrower cannot be considered as self-employed.\n\n3. As per Schedule K-1 (Form 1065), it is Final K-1, validate if the business is still active and gather appropriate documentation\n\n4. c. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n4. d In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n9. Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                        "tasks": [
+                            {
+                                "task_name": "extract_dates_and_years",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Extract the application date from the input and compute the application year. The application_date is located at the root of the input data under application_date -> value. Parse the date (accepted formats: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY) and extract the year part to produce computed_application_year.",
+                                        "inputs": [
+                                            "'application_date': input_data -> application_date -> value"
+                                        ],
+                                        "formulas": [
+                                            "computed_application_year = extract the year portion from the provided date string"
+                                        ],
+                                        "outputs": [
+                                            "'computed_application_year': The year extracted from application_date in YYYY format"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_application_year",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "application_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['application_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted from application_date in YYYY format"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "extract_document_and_validate_consistency",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "From the list of Tax Form 1065SCHK1 (located at input_data -> borrowers -> first borrower -> 'Tax Form 1065SCHK1' which is an array), identify the document whose tax_year equals (computed_application_year - 1). Then extract the following fields: schk1_tax_year from Tax Form 1065SCHK1.tax_year -> value, schk1_business_name from Tax Form 1065SCHK1.partnership_name -> value, schk1_borrower_name from Tax Form 1065SCHK1.partner_name -> value, capital_ending from Tax Form 1065SCHK1 (assume field 'capital_ending' exists under the document), final_k1 from Tax Form 1065SCHK1.is_final_k1_checked -> value, ordinary_business_income from Tax Form 1065SCHK1.ordinary_business_income_loss -> value, net_rental_real_estate_income from Tax Form 1065SCHK1.net_rental_real_estate_income_loss -> value, other_net_rental_income from Tax Form 1065SCHK1.other_net_rental_income_loss -> value, and k1_distributions from Tax Form 1065SCHK1.distributions -> value.",
+                                        "inputs": [
+                                            "'computed_application_year': output from Task 1 subtask 1.a",
+                                            "'tax_form_list': input_data -> borrowers -> first borrower -> 'Tax Form 1065SCHK1' (array); select the item where Tax Form 1065SCHK1.tax_year -> value equals (computed_application_year - 1)"
+                                        ],
+                                        "formulas": [
+                                            "Determine target_year = computed_application_year - 1",
+                                            "Match document item where document.tax_year.value equals target_year"
+                                        ],
+                                        "outputs": [
+                                            "'schk1_tax_year': The tax year extracted from the selected Tax Form 1065SCHK1 document (YYYY)",
+                                            "'schk1_business_name': The business name extracted from the selected document",
+                                            "'schk1_borrower_name': The borrower name extracted from the selected document",
+                                            "'capital_ending': The capital ending value extracted from the selected document",
+                                            "'final_k1': The final K-1 status (boolean or string) extracted from the selected document",
+                                            "'ordinary_business_income': The ordinary business income extracted from the document",
+                                            "'net_rental_real_estate_income': The net rental real estate income extracted from the document",
+                                            "'other_net_rental_income': The other net rental income extracted from the document",
+                                            "'k1_distributions': The K-1 distributions value extracted from the document"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_tax_form_1065schk1_details",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted from application_date in YYYY format",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_list",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1065SCHK1 documents from the first borrower",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "partner_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1PartnerName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "partnership_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1PartnershipName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "is_final_k1_checked": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1FinalK1 String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "ordinary_business_income_loss": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1OrdinaryBusinessIncomeLoss String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "net_rental_real_estate_income_loss": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1NetRentalRealEstateIncomeLoss String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "other_net_rental_income_loss": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1OtherNetRentalIncomeLoss String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "distributions": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1Distributions String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "partnership_interest": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "ending_capital_account": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "value": {
+                                                                                    "type": "string",
+                                                                                    "description": "Tax Form 1065SCHK1.taxForm1065SCHK1EndingCapitalAccount String (Currency)"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['Tax Form 1065SCHK1']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "schk1_tax_year",
+                                                    "data_type": "String",
+                                                    "description": "The tax year extracted from the selected Tax Form 1065SCHK1 document"
+                                                },
+                                                {
+                                                    "field_name": "schk1_business_name",
+                                                    "data_type": "String",
+                                                    "description": "The business name extracted from the selected document"
+                                                },
+                                                {
+                                                    "field_name": "schk1_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "The borrower name extracted from the selected document"
+                                                },
+                                                {
+                                                    "field_name": "capital_ending",
+                                                    "data_type": "String",
+                                                    "description": "The capital ending value extracted from the selected document"
+                                                },
+                                                {
+                                                    "field_name": "final_k1",
+                                                    "data_type": "String",
+                                                    "description": "The final K-1 status extracted from the selected document"
+                                                },
+                                                {
+                                                    "field_name": "ordinary_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The ordinary business income extracted from the document"
+                                                },
+                                                {
+                                                    "field_name": "net_rental_real_estate_income",
+                                                    "data_type": "String",
+                                                    "description": "The net rental real estate income extracted from the document"
+                                                },
+                                                {
+                                                    "field_name": "other_net_rental_income",
+                                                    "data_type": "String",
+                                                    "description": "The other net rental income extracted from the document"
+                                                },
+                                                {
+                                                    "field_name": "k1_distributions",
+                                                    "data_type": "String",
+                                                    "description": "The K-1 distributions value extracted from the document"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "2.b",
+                                        "description": "Validate the consistency of the extracted fields. Compare the extracted schk1_tax_year with the Tax Form 1065.tax_year (to be extracted later from Tax Form 1065) and ensure that schk1_business_name matches the business name found in URLA1003.employer_name extracted from borrowers -> first borrower -> URLA -> employer_name -> value OR from borrowers -> first borrower -> additional_employer (if applicable). Also validate that schk1_borrower_name equals the borrower's name extracted from URLA (borrowers -> first borrower -> URLA -> borrower_name -> value) OR from an alternative source (such as borrowers -> additional information where 'ALIASES' may be present).",
+                                        "inputs": [
+                                            "'schk1_tax_year': from subtask 2.a",
+                                            "'schk1_business_name': from subtask 2.a",
+                                            "'schk1_borrower_name': from subtask 2.a",
+                                            "'URLA_borrower_employer_name': input_data -> borrowers -> first borrower -> URLA -> employer_name -> value",
+                                            "'URLA_borrower_name': input_data -> borrowers -> first borrower -> URLA -> borrower_name -> value"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'consistency_valid': A Boolean indicating if the Tax Form 1065SCHK1 document fields are consistent with the expected values"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_extracted_fields_consistency",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "schk1_tax_year",
+                                                    "data_type": "String",
+                                                    "description": "The tax year extracted from the selected Tax Form 1065SCHK1 document",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['schk1_tax_year']"
+                                                },
+                                                {
+                                                    "argument_name": "schk1_business_name",
+                                                    "data_type": "String",
+                                                    "description": "The business name extracted from the selected document",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['schk1_business_name']"
+                                                },
+                                                {
+                                                    "argument_name": "schk1_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "The borrower name extracted from the selected document",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['schk1_borrower_name']"
+                                                },
+                                                {
+                                                    "argument_name": "URLA_borrower_employer_name",
+                                                    "data_type": "String",
+                                                    "description": "Employer name from URLA of the first borrower",
+                                                    "argument_schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "value": {
+                                                                "type": "string",
+                                                                "description": "URLA_Final.Borrower Employer Name String"
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['employer_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "URLA_borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Borrower's name from URLA of the first borrower",
+                                                    "argument_schema": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "value": {
+                                                                "type": "string",
+                                                                "description": "URLA_Final.Borrower Name String"
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['borrower_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1065_list",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1065 documents located at input_data -> other_doc_types -> 'Tax Form 1065'",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "partnership_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065NameofPartnership String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "ordinary_business_income_loss": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065OrdinaryBusinessIncomeLoss String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "less_returns_and_allowances_amount": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065LessReturnsandAllowances String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depreciation_attach_form_4562": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065DepreciationAttachForm4562 String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depletion_excluding_oil_and_gas": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065DepletionExcludingOilandGas String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065ScheduleLMortgagesNotesBondsPayableinLessThan1YearEndofTaxYear String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_m1_travel_and_entertainment_expenses": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065ScheduleM1TravelandEntertainmentExpenses String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_l_cash_end_of_tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065ScheduleLCashEndofTaxYear String (Currency)"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1065']"
+                                                }
+                                            ],
+                                            "return_type": "Boolean",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "consistency_valid",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates if the Tax Form 1065SCHK1 document fields are consistent with the expected values"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_capital_ending",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "Check the extracted capital_ending value to verify if it is greater than 25. If the condition (capital_ending > 25) is met, then proceed to Step 4 (Validate Final K-1 Status).",
+                                        "inputs": [
+                                            "'capital_ending': from Task 2, subtask 2.a ('capital_ending' field)"
+                                        ],
+                                        "formulas": [
+                                            "Check if capital_ending > 25"
+                                        ],
+                                        "outputs": [
+                                            "'capital_ending_check': A Boolean flag set to true if capital_ending > 25"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": "validate_final_k-1_status",
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_capital_ending_greater_than_25",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "capital_ending",
+                                                    "data_type": "String",
+                                                    "description": "The capital ending value extracted from Task 2, subtask 2.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['capital_ending']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "capital_ending_check",
+                                                    "data_type": "Boolean",
+                                                    "description": "A Boolean flag set to true if capital_ending > 25"
+                                                },
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the task 'validate_final_k-1_status'"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "3.b",
+                                        "description": "If the extracted capital_ending is not greater than 25, return the discrepancy message and terminate the process. Use the discrepancy message: 'As per Schedule K-1 (Form 1065) the capital ending % is less than 25% and borrower cannot be considered as self-employed.'",
+                                        "inputs": [
+                                            "'capital_ending': from Task 2, subtask 2.a"
+                                        ],
+                                        "formulas": [
+                                            "If capital_ending <= 25 then trigger discrepancy"
+                                        ],
+                                        "outputs": [
+                                            "'discrepancy_msg': The discrepancy message indicating capital ending failure"
+                                        ],
+                                        "discrepancy_string": "As per Schedule K-1 (Form 1065) the capital ending % is less than 25% and borrower cannot be considered as self-employed.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_capital_ending_not_greater_than_25",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "capital_ending",
+                                                    "data_type": "String",
+                                                    "description": "The capital ending value extracted from Task 2, subtask 2.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['capital_ending']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The discrepancy message indicating capital ending failure"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "validate_final_k-1_status",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "4.a",
+                                        "description": "Check if the extracted final_k1 value from the Tax Form 1065SCHK1 is false. If final_k1 == false, then proceed to Step 5 (Calculate and Select K-1 Income).",
+                                        "inputs": [
+                                            "'final_k1': from Task 2, subtask 2.a"
+                                        ],
+                                        "formulas": [
+                                            "Evaluate condition: final_k1 == false"
+                                        ],
+                                        "outputs": [
+                                            "'final_k1_valid': A Boolean flag indicating that final_k1 is false"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": "calculate_and_select_k-1_income",
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_final_k1_status",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "final_k1",
+                                                    "data_type": "String",
+                                                    "description": "The final K-1 status extracted from the selected document from Task 2, subtask 2.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['final_k1']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "final_k1_valid",
+                                                    "data_type": "Boolean",
+                                                    "description": "A Boolean flag indicating that final_k1 is false"
+                                                },
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the task 'calculate_and_select_k-1_income'"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "4.b",
+                                        "description": "If final_k1 is not false, then return the discrepancy message: 'As per Schedule K-1 (Form 1065), it is Final K-1, validate if the business is still active and gather appropriate documentation.' and terminate the process.",
+                                        "inputs": [
+                                            "'final_k1': from Task 2, subtask 2.a"
+                                        ],
+                                        "formulas": [
+                                            "If final_k1 != false then trigger discrepancy"
+                                        ],
+                                        "outputs": [
+                                            "'discrepancy_msg': The discrepancy message for a final K-1 status issue"
+                                        ],
+                                        "discrepancy_string": "As per Schedule K-1 (Form 1065), it is Final K-1, validate if the business is still active and gather appropriate documentation.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "handle_final_k1_discrepancy",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "final_k1",
+                                                    "data_type": "String",
+                                                    "description": "The final K-1 status extracted from the selected document from Task 2, subtask 2.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['final_k1']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The discrepancy message for a final K-1 status issue"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_and_select_k-1_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "5.a",
+                                        "description": "Compute k1_income by summing the extracted ordinary_business_income, net_rental_real_estate_income, and other_net_rental_income from the Tax Form 1065SCHK1 document.",
+                                        "inputs": [
+                                            "'ordinary_business_income': from Task 2, subtask 2.a",
+                                            "'net_rental_real_estate_income': from Task 2, subtask 2.a",
+                                            "'other_net_rental_income': from Task 2, subtask 2.a"
+                                        ],
+                                        "formulas": [
+                                            "k1_income = ordinary_business_income + net_rental_real_estate_income + other_net_rental_income"
+                                        ],
+                                        "outputs": [
+                                            "'k1_income': The computed K-1 income value"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compute_k1_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "ordinary_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The ordinary business income extracted from the document (Task 2, subtask 2.a)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['ordinary_business_income']"
+                                                },
+                                                {
+                                                    "argument_name": "net_rental_real_estate_income",
+                                                    "data_type": "String",
+                                                    "description": "The net rental real estate income extracted from the document (Task 2, subtask 2.a)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['net_rental_real_estate_income']"
+                                                },
+                                                {
+                                                    "argument_name": "other_net_rental_income",
+                                                    "data_type": "String",
+                                                    "description": "The other net rental income extracted from the document (Task 2, subtask 2.a)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['other_net_rental_income']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "k1_income",
+                                                    "data_type": "String",
+                                                    "description": "The computed K-1 income value"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "5.b",
+                                        "description": "If k1_income is less than k1_distributions AND k1_income is less than 0, then store k1_income as selected_k1_value.",
+                                        "inputs": [
+                                            "'k1_income': from subtask 5.a",
+                                            "'k1_distributions': from Task 2, subtask 2.a"
+                                        ],
+                                        "formulas": [
+                                            "If (k1_income < k1_distributions) AND (k1_income < 0) then selected_k1_value = k1_income"
+                                        ],
+                                        "outputs": [
+                                            "'selected_k1_value': The chosen K-1 income value based on the first condition"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_k1_value_condition_1",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "k1_income",
+                                                    "data_type": "String",
+                                                    "description": "The computed K-1 income value from subtask 5.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_and_select_k-1_income']['5.a']['k1_income']"
+                                                },
+                                                {
+                                                    "argument_name": "k1_distributions",
+                                                    "data_type": "String",
+                                                    "description": "The K-1 distributions value extracted from the document (Task 2, subtask 2.a)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['k1_distributions']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "selected_k1_value",
+                                                    "data_type": "String",
+                                                    "description": "The chosen K-1 income value based on the first condition"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "5.c",
+                                        "description": "Else if k1_income is greater than k1_distributions AND k1_distributions is not zero, then store k1_distributions as selected_k1_value and return the discrepancy message 'In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.'",
+                                        "inputs": [
+                                            "'k1_income': from subtask 5.a",
+                                            "'k1_distributions': from Task 2, subtask 2.a"
+                                        ],
+                                        "formulas": [
+                                            "If (k1_income > k1_distributions) AND (k1_distributions != 0) then selected_k1_value = k1_distributions"
+                                        ],
+                                        "outputs": [
+                                            "'selected_k1_value': The chosen K-1 income value based on the second condition",
+                                            "'discrepancy_msg': Discrepancy message for liquidity validation"
+                                        ],
+                                        "discrepancy_string": "In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_k1_value_condition_2",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "k1_income",
+                                                    "data_type": "String",
+                                                    "description": "The computed K-1 income value from subtask 5.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_and_select_k-1_income']['5.a']['k1_income']"
+                                                },
+                                                {
+                                                    "argument_name": "k1_distributions",
+                                                    "data_type": "String",
+                                                    "description": "The K-1 distributions value extracted from the document (Task 2, subtask 2.a)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['k1_distributions']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "selected_k1_value",
+                                                    "data_type": "String",
+                                                    "description": "The chosen K-1 income value based on the second condition"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message for liquidity validation"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "5.d",
+                                        "description": "Else if k1_distributions equals 0, then store k1_income as selected_k1_value and return the same discrepancy message regarding liquidity.",
+                                        "inputs": [
+                                            "'k1_income': from subtask 5.a",
+                                            "'k1_distributions': from Task 2, subtask 2.a"
+                                        ],
+                                        "formulas": [
+                                            "If k1_distributions == 0 then selected_k1_value = k1_income"
+                                        ],
+                                        "outputs": [
+                                            "'selected_k1_value': The chosen K-1 income value when distributions are zero",
+                                            "'discrepancy_msg': Discrepancy message for liquidity validation"
+                                        ],
+                                        "discrepancy_string": "In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_k1_value_condition_3",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "k1_income",
+                                                    "data_type": "String",
+                                                    "description": "The computed K-1 income value from subtask 5.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_and_select_k-1_income']['5.a']['k1_income']"
+                                                },
+                                                {
+                                                    "argument_name": "k1_distributions",
+                                                    "data_type": "String",
+                                                    "description": "The K-1 distributions value extracted from the document (Task 2, subtask 2.a)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['k1_distributions']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "selected_k1_value",
+                                                    "data_type": "String",
+                                                    "description": "The chosen K-1 income value when distributions are zero"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Discrepancy message for liquidity validation"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "5.e",
+                                        "description": "If none of the above conditions match, then store k1_income as selected_k1_value.",
+                                        "inputs": [
+                                            "'k1_income': from subtask 5.a"
+                                        ],
+                                        "formulas": [
+                                            "Else, selected_k1_value = k1_income"
+                                        ],
+                                        "outputs": [
+                                            "'selected_k1_value': The chosen K-1 income value based on the default condition"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "select_k1_value_default",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "k1_income",
+                                                    "data_type": "String",
+                                                    "description": "The computed K-1 income value from subtask 5.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_and_select_k-1_income']['5.a']['k1_income']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "selected_k1_value",
+                                                    "data_type": "String",
+                                                    "description": "The chosen K-1 income value based on the default condition"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "extract_tax_form_1065_data",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "6.a",
+                                        "description": "From the list of Tax Form 1065 (located at input_data -> other_doc_types -> 'Tax Form 1065' which is an array), pick the one with tax_year equal to (computed_application_year - 1). Then extract the following fields: 1065_tax_year from Tax Form 1065.tax_year -> value (which must equal schk1_tax_year), 1065_business_name from Tax Form 1065.partnership_name -> value (which must equal schk1_business_name and also match URLA employer name), ordinary_income_loss from Tax Form 1065.ordinary_business_income_loss -> value, nonrecurring_other_income from Tax Form 1065.less_returns_and_allowances_amount -> value (or the designated field for nonrecurring other income), depreciation from Tax Form 1065.depreciation_attach_form_4562 -> value, depletion from Tax Form 1065.depletion_excluding_oil_and_gas -> value, short_term_debt from Tax Form 1065.schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year -> value, travel_entertainment from Tax Form 1065.schedule_m1_travel_and_entertainment_expenses -> value, and ending_capital from Tax Form 1065.schedule_l_cash_end_of_tax_year -> value.",
+                                        "inputs": [
+                                            "'computed_application_year': output from Task 1 subtask 1.a",
+                                            "'schk1_tax_year': output from Task 2, subtask 2.a",
+                                            "'schk1_business_name': output from Task 2, subtask 2.a",
+                                            "'tax_form_1065_list': input_data -> other_doc_types -> 'Tax Form 1065'"
+                                        ],
+                                        "formulas": [
+                                            "Determine target_year = computed_application_year - 1 and match Tax Form 1065 where tax_year.value equals target_year"
+                                        ],
+                                        "outputs": [
+                                            "'1065_tax_year': The tax year from Tax Form 1065 document (YYYY)",
+                                            "'1065_business_name': The business name extracted from Tax Form 1065 document",
+                                            "'ordinary_income_loss': The ordinary income loss value",
+                                            "'nonrecurring_other_income': The nonrecurring income/allowances value",
+                                            "'depreciation': The depreciation value",
+                                            "'depletion': The depletion value",
+                                            "'short_term_debt': The short term debt value",
+                                            "'travel_entertainment': The travel & entertainment expenses value",
+                                            "'ending_capital': The ending capital value"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_tax_form_1065_fields",
+                                            "function_description": "Extracts specific fields from the Tax Form 1065 document for the given tax year and validates against provided business name and tax year.",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted from application_date in YYYY format. Output from Task 1 subtask 1.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "schk1_tax_year",
+                                                    "data_type": "String",
+                                                    "description": "The tax year extracted from the selected Tax Form 1065SCHK1 document. Output from Task 2, subtask 2.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['schk1_tax_year']"
+                                                },
+                                                {
+                                                    "argument_name": "schk1_business_name",
+                                                    "data_type": "String",
+                                                    "description": "The business name extracted from the selected document. Output from Task 2, subtask 2.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_document_and_validate_consistency']['2.a']['schk1_business_name']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1065_list",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1065 documents located at input_data -> other_doc_types -> 'Tax Form 1065'",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "partnership_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065NameofPartnership String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "ordinary_business_income_loss": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065OrdinaryBusinessIncomeLoss String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "less_returns_and_allowances_amount": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065LessReturnsandAllowances String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depreciation_attach_form_4562": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065DepreciationAttachForm4562 String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depletion_excluding_oil_and_gas": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065DepletionExcludingOilandGas String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065ScheduleLMortgagesNotesBondsPayableinLessThan1YearEndofTaxYear String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_m1_travel_and_entertainment_expenses": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065ScheduleM1TravelandEntertainmentExpenses String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_l_cash_end_of_tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065ScheduleLCashEndofTaxYear String (Currency)"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1065']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "1065_tax_year",
+                                                    "data_type": "String",
+                                                    "description": "The tax year from Tax Form 1065 document (YYYY)"
+                                                },
+                                                {
+                                                    "field_name": "1065_business_name",
+                                                    "data_type": "String",
+                                                    "description": "The business name extracted from Tax Form 1065 document"
+                                                },
+                                                {
+                                                    "field_name": "ordinary_income_loss",
+                                                    "data_type": "String",
+                                                    "description": "The ordinary income loss value"
+                                                },
+                                                {
+                                                    "field_name": "nonrecurring_other_income",
+                                                    "data_type": "String",
+                                                    "description": "The nonrecurring income/allowances value"
+                                                },
+                                                {
+                                                    "field_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "The depreciation value"
+                                                },
+                                                {
+                                                    "field_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "The depletion value"
+                                                },
+                                                {
+                                                    "field_name": "short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "The short term debt value"
+                                                },
+                                                {
+                                                    "field_name": "travel_entertainment",
+                                                    "data_type": "String",
+                                                    "description": "The travel & entertainment expenses value"
+                                                },
+                                                {
+                                                    "field_name": "ending_capital",
+                                                    "data_type": "String",
+                                                    "description": "The ending capital value"
+                                                },
+                                                {
+                                                    "field_name": "total_guaranteed_payments",
+                                                    "data_type": "String",
+                                                    "description": "The value of total guaranteed payments"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_business_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "7.a",
+                                        "description": "Compute the subtotal_business_income using the formula: ordinary_income_loss - nonrecurring_other_income + depreciation + depletion - short_term_debt - travel_entertainment.",
+                                        "inputs": [
+                                            "'ordinary_income_loss': from Task 6, subtask 6.a",
+                                            "'nonrecurring_other_income': from Task 6, subtask 6.a",
+                                            "'depreciation': from Task 6, subtask 6.a",
+                                            "'depletion': from Task 6, subtask 6.a",
+                                            "'short_term_debt': from Task 6, subtask 6.a",
+                                            "'travel_entertainment': from Task 6, subtask 6.a"
+                                        ],
+                                        "formulas": [
+                                            "subtotal_business_income = ordinary_income_loss - nonrecurring_other_income + depreciation + depletion - short_term_debt - travel_entertainment"
+                                        ],
+                                        "outputs": [
+                                            "'subtotal_business_income': The computed subtotal of the business income"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compute_subtotal_business_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "ordinary_income_loss",
+                                                    "data_type": "String",
+                                                    "description": "The ordinary income loss value from Task 6, subtask 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['ordinary_income_loss']"
+                                                },
+                                                {
+                                                    "argument_name": "nonrecurring_other_income",
+                                                    "data_type": "String",
+                                                    "description": "The nonrecurring income/allowances value from Task 6, subtask 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['nonrecurring_other_income']"
+                                                },
+                                                {
+                                                    "argument_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "The depreciation value from Task 6, subtask 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['depreciation']"
+                                                },
+                                                {
+                                                    "argument_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "The depletion value from Task 6, subtask 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['depletion']"
+                                                },
+                                                {
+                                                    "argument_name": "short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "The short term debt value from Task 6, subtask 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['short_term_debt']"
+                                                },
+                                                {
+                                                    "argument_name": "travel_entertainment",
+                                                    "data_type": "String",
+                                                    "description": "The travel & entertainment expenses value from Task 6, subtask 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['travel_entertainment']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "subtotal_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The computed subtotal of the business income"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "7.b",
+                                        "description": "Calculate the borrower_share_business_income as (ending_capital / 100) multiplied by the subtotal_business_income.",
+                                        "inputs": [
+                                            "'ending_capital': from Task 6, subtask 6.a",
+                                            "'subtotal_business_income': from Task 7, subtask 7.a"
+                                        ],
+                                        "formulas": [
+                                            "borrower_share_business_income = (ending_capital / 100) * subtotal_business_income"
+                                        ],
+                                        "outputs": [
+                                            "'borrower_share_business_income': The calculated share of business income for the borrower"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_borrower_share_business_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "ending_capital",
+                                                    "data_type": "String",
+                                                    "description": "The ending capital value from Task 6, subtask 6.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['ending_capital']"
+                                                },
+                                                {
+                                                    "argument_name": "subtotal_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The computed subtotal of the business income from Task 7, subtask 7.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_business_income']['7.a']['subtotal_business_income']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "borrower_share_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The calculated share of business income for the borrower"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_monthly_average",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "8.a",
+                                        "description": "Extract total_guaranteed_payments from Tax Form 1065. This value is located at Tax Form 1065.guaranteed_payments_to_partners -> value.",
+                                        "inputs": [
+                                            "'tax_form_1065': from Task 6, subtask 6.a matched document in Tax Form 1065 -> guaranteed_payments_to_partners -> value"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'total_guaranteed_payments': The value of total guaranteed payments to partners"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_total_guaranteed_payments",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "total_guaranteed_payments",
+                                                    "data_type": "str",
+                                                    "description": "total_guaranteed_payments from Tax Form 1065",
+                                                    "argument_schema":null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['extract_tax_form_1065_data']['6.a']['total_guaranteed_payments']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "total_guaranteed_payments",
+                                                    "data_type": "String",
+                                                    "description": "The value of total guaranteed payments to partners"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "8.b",
+                                        "description": "Compute the monthly average income using the formula: (borrower_share_business_income + total_guaranteed_payments + selected_k1_value) divided by 12. Store the result as <schk1_tax_year>.monthly_average.",
+                                        "inputs": [
+                                            "'borrower_share_business_income': from Task 7, subtask 7.b",
+                                            "'total_guaranteed_payments': from Task 8, subtask 8.a",
+                                            "'selected_k1_value': from Task 5 (one of subtask 5.b, 5.c, 5.d or 5.e)"
+                                        ],
+                                        "formulas": [
+                                            "monthly_average = (borrower_share_business_income + total_guaranteed_payments + selected_k1_value) / 12"
+                                        ],
+                                        "outputs": [
+                                            "'monthly_average': The computed monthly average income stored as <schk1_tax_year>.monthly_average"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compute_monthly_average_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "borrower_share_business_income",
+                                                    "data_type": "String",
+                                                    "description": "The calculated share of business income for the borrower from Task 7, subtask 7.b",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_business_income']['7.b']['borrower_share_business_income']"
+                                                },
+                                                {
+                                                    "argument_name": "total_guaranteed_payments",
+                                                    "data_type": "String",
+                                                    "description": "The value of total guaranteed payments to partners from Task 8, subtask 8.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_monthly_average']['8.a']['total_guaranteed_payments']"
+                                                },
+                                                {
+                                                    "argument_name": "selected_k1_value",
+                                                    "data_type": "String",
+                                                    "description": "The chosen K-1 income value from Task 5 (one of subtask 5.b, 5.c, 5.d or 5.e)",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_and_select_k-1_income']['5.e']['selected_k1_value']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_average",
+                                                    "data_type": "String",
+                                                    "description": "The computed monthly average income stored as <schk1_tax_year>.monthly_average"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "decision_flow",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "9.a",
+                                        "description": "Check if another version of the documents for Tax Form 1065 and Tax Form 1065SCHK1 (for the same borrower and business) is present. If yes, then skip to the process '1065 Business \u2192 Trend Analysis'.",
+                                        "inputs": [
+                                            "'tax_form_1065_versions': Check within input_data for multiple entries of Tax Form 1065 for the same borrower",
+                                            "'tax_form_1065SCHK1_versions': Check within input_data -> borrowers -> first borrower -> 'Tax Form 1065SCHK1' for multiple entries"
+                                        ],
+                                        "formulas": [
+                                            "Condition: If multiple versions exist then trigger skip"
+                                        ],
+                                        "outputs": [
+                                            "'decision_flag': A flag indicating that multiple document versions exist"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": "1065 Business \u2192 Trend Analysis",
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_multiple_versions",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "tax_form_1065_versions",
+                                                    "data_type": "List[dict]",
+                                                    "description": "Check within input_data for multiple entries of Tax Form 1065 for the same borrower",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "partnership_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065.taxForm1065NameofPartnership String"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1065']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_form_1065schk1_versions",
+                                                    "data_type": "List[dict]",
+                                                    "description": "Check within input_data -> borrowers -> first borrower -> 'Tax Form 1065SCHK1' for multiple entries",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "partner_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1PartnerName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1065SCHK1.taxForm1065SCHK1TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers'][0]['Tax Form 1065SCHK1']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "decision_flag",
+                                                    "data_type": "Boolean",
+                                                    "description": "A flag indicating that multiple document versions exist"
+                                                },
+                                                {
+                                                    "field_name": "skip_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the HTP '1065 Business \u2192 Trend Analysis'"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "9.b",
+                                        "description": "If no alternate version is present, then skip to Step 10 (Store and Validate Monthly Income).",
+                                        "inputs": [
+                                            "'decision_flag': result from subtask 9.a"
+                                        ],
+                                        "formulas": [
+                                            "If decision_flag does NOT indicate multiple versions, then proceed to step 10"
+                                        ],
+                                        "outputs": [
+                                            "'proceed_to_step10': A Boolean flag indicating continuation to Step 10"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": "store_and_validate_monthly_income",
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "proceed_to_step_10",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "decision_flag",
+                                                    "data_type": "Boolean",
+                                                    "description": "Result from subtask 9.a indicating if multiple versions exist",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['decision_flow']['9.a']['decision_flag']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean, Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "proceed_to_step10",
+                                                    "data_type": "Boolean",
+                                                    "description": "A Boolean flag indicating continuation to Step 10"
+                                                },
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the task 'store_and_validate_monthly_income'"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "store_and_validate_monthly_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "10.a",
+                                        "description": "Store the computed monthly_average (from Task 8, subtask 8.b) as monthly_income. Then return the discrepancy message: 'Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.' and terminate the process.",
+                                        "inputs": [
+                                            "'monthly_average': from Task 8, subtask 8.b"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'monthly_income': The stored monthly income value based on monthly_average",
+                                            "'discrepancy_msg': Final discrepancy message regarding the use of only 1 year of Business Tax Returns"
+                                        ],
+                                        "discrepancy_string": "Only 1 year of Business Tax Returns is being used to calculate the income, validate the borrower has had an ownership share of 25% or more for the past five years consecutively or documentation is present to offset the shorter history of the business.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "store_and_validate_monthly_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "monthly_average",
+                                                    "data_type": "String",
+                                                    "description": "The computed monthly average income from Task 8, subtask 8.b",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1065']['htp_extract_and_validate_1065schk1']['calculate_monthly_average']['8.b']['monthly_average']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_income",
+                                                    "data_type": "String",
+                                                    "description": "The stored monthly income value based on monthly_average"
+                                                },
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Final discrepancy message regarding the use of only 1 year of Business Tax Returns"
+                                                },
+                                                {
+                                                    "field_name": "terminate_htp",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the HTP"
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

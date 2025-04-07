@@ -1,0 +1,691 @@
+[
+  {
+    "name": "rule_schedule_c_self_employment_history_requirement",
+    "question": "Is Schedule C self employment history requirement meet?",
+    "steps": [
+      {
+        "name": "step_long_tenured_employment_validation",
+        "fields": "SCH C Business \u2192 \nEmployment history",
+        "split_cell": false,
+        "schema_keys": [
+          "borrowers[].Tax Form 1040",
+          "other_doc_types.Tax Form 1120",
+          "other_doc_types.Tax Form 1125E",
+          "other_doc_types.Tax Form 1120SCHG",
+          "borrowers[].URLA"
+        ],
+        "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n   From the `current_employer.start_date` (or \"1b Start Date\"), extract `start_year` in the form YYYY.\n\n\n2. Classify Employment Tenure\n   Calculate the difference between `current_employer.start_date` and `application_date` and classify as:\n   - `long_tenured`: `current_employer.start_date` \u2264 (`application_date` \u2212 2 years)\n   - `recently_hired`: `current_employer.start_date` > (`application_date` \u2212 2 years)\n   \n\n3. Decision Flow\n   IF (`long_tenured`) THEN  \n      Skip to Step 4 \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-2) or (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` == 01/01/{computed_application_year}-1) THEN  \n      Skip to Step 5  \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` != 01/01/{computed_application_year}-1) or (`recently_hired` AND `start_year` == {computed_application_year}) THEN  \n      Skip to Step 6  \n\n---\n\n4. Long-Tenured Employment Validation  \n        If (\n                From List of Tax Form 1040, if one exists for the year {computed_application_year}-1 AND\n                From List of Tax Form 1120, if one exists for the year {computed_application_year}-1 AND\n                (From List of Tax Form 1125E, if one exists for the year {computed_application_year}-1 OR From List of Tax Form 1120SCHG, if one exists for the year {computed_application_year}-1)\n        ):\n      Print: \"All required tax documentation (Form 1040, Form 1120, and either Form 1125E or Form 1120SCHG) for the most recent year is present, satisfying the federal income tax return requirements.\" and terminate the process  \n   ELSE  \n      Print: \"Required tax documentation (Form 1040 and/or Form 1120) for the most recent year is missing. Tax extensions are not permitted; thus, the federal income tax return requirements are not met.\" and terminate the process  \n\n---\n\n5. Recently Hired with Start Year {computed_application_year}-2  \n   Print: \"Employment tenure is less than 2 years with a start year of {computed_application_year}-2. Verify that: (1) The borrower has a prior income history at a similar or higher level; (2) The borrower\u2019s previous field matches the current business\u2019s products or services; or (3) The borrower\u2019s prior role had comparable responsibilities to the current business.\" and terminate the process  \n\n---\n\n6. Recently Hired with Start Year {computed_application_year}-1 and Non-January Start Date  \n   Print: \"Self-employment income cannot be used for qualification, as the Tax Forms 1040 and 1120 do not reflect a full 12 months of income from the current business due to a start date after January 1st of {computed_application_year}-1.\" and terminate the process  ",
+        "discrepancy_messages": "1. b. Employment history of self employment is less than 2 years, therefore validate that;\n\u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and\n\u25d8 Borrower was in a field that provides the same products or services as the current business ; or\n\u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.\n\n1.c.  Income for Schedule C business cannot be considered for qualification, as the Personal Tax Returns 1040 will not reflect a fullyear (12 months) of self-employment income from the current business.",
+        "doc_type_keys": [
+          "other_doc_types.Tax Form 1120",
+          "other_doc_types.Tax Form 1120SCHG",
+          "other_doc_types.Tax Form 1125E",
+          "borrowers[].URLA",
+          "borrowers[].Tax Form 1040"
+        ],
+        "htps": [
+          {
+            "name": "htp_long_tenured_employment_validation",
+            "expert_instructions": "1. Extract Dates and Years\n   From the application_date, extract application_year in the form {computed_application_year}.\n   From the `current_employer.start_date` (or \"1b Start Date\"), extract `start_year` in the form YYYY.\n\n\n2. Classify Employment Tenure\n   Calculate the difference between `current_employer.start_date` and `application_date` and classify as:\n   - `long_tenured`: `current_employer.start_date` \u2264 (`application_date` \u2212 2 years)\n   - `recently_hired`: `current_employer.start_date` > (`application_date` \u2212 2 years)\n   \n\n3. Decision Flow\n   IF (`long_tenured`) THEN  \n      Skip to Step 4 \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-2) or (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` == 01/01/{computed_application_year}-1) THEN  \n      Skip to Step 5  \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` != 01/01/{computed_application_year}-1) or (`recently_hired` AND `start_year` == {computed_application_year}) THEN  \n      Skip to Step 6  \n\n---\n\n4. Long-Tenured Employment Validation  \n        If (\n                From List of Tax Form 1040, if one exists for the year {computed_application_year}-1 AND\n                From List of Tax Form 1120, if one exists for the year {computed_application_year}-1 AND\n                (From List of Tax Form 1125E, if one exists for the year {computed_application_year}-1 OR From List of Tax Form 1120SCHG, if one exists for the year {computed_application_year}-1)\n        ):\n      Print: \"All required tax documentation (Form 1040, Form 1120, and either Form 1125E or Form 1120SCHG) for the most recent year is present, satisfying the federal income tax return requirements.\" and terminate the process  \n   ELSE  \n      Print: \"Required tax documentation (Form 1040 and/or Form 1120) for the most recent year is missing. Tax extensions are not permitted; thus, the federal income tax return requirements are not met.\" and terminate the process  \n\n---\n\n5. Recently Hired with Start Year {computed_application_year}-2  \n   Print: \"Employment tenure is less than 2 years with a start year of {computed_application_year}-2. Verify that: (1) The borrower has a prior income history at a similar or higher level; (2) The borrower\u2019s previous field matches the current business\u2019s products or services; or (3) The borrower\u2019s prior role had comparable responsibilities to the current business.\" and terminate the process  \n\n---\n\n6. Recently Hired with Start Year {computed_application_year}-1 and Non-January Start Date  \n   Print: \"Self-employment income cannot be used for qualification, as the Tax Forms 1040 and 1120 do not reflect a full 12 months of income from the current business due to a start date after January 1st of {computed_application_year}-1.\" and terminate the process  ",
+            "discrepancy_messages": "1. b. Employment history of self employment is less than 2 years, therefore validate that;\n\u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and\n\u25d8 Borrower was in a field that provides the same products or services as the current business ; or\n\u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.\n\n1.c.  Income for Schedule C business cannot be considered for qualification, as the Personal Tax Returns 1040 will not reflect a fullyear (12 months) of self-employment income from the current business.",
+            "tasks": [
+              {
+                "task_name": "extract_dates_and_years",
+                "subtasks": [
+                  {
+                    "subtask_id": "1.a",
+                    "description": "Extract the application_year from the application_date field. This subtask reads the 'application_date' string, identifies the year component (assuming the date is in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY), and stores it as computed_application_year in YYYY format.",
+                    "inputs": [
+                      "'application_date': input_data -> 'application_date' -> 'value'"
+                    ],
+                    "formulas": [
+                      "Split the date string by '/', '-', or '.' and select the third element as the year."
+                    ],
+                    "outputs": [
+                      "'computed_application_year': A string representing the year extracted from application_date in YYYY format"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "extract_application_year",
+                      "arguments": [
+                        {
+                          "argument_name": "application_date",
+                          "data_type": "String (Date)",
+                          "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['application_date']['value']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "A string representing the year extracted from application_date in YYYY format"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "1.b",
+                    "description": "Extract the start_year from the current employer's start_date field. This subtask navigates to the first item in the 'borrowers' list, then to 'URLA', then to the first item in the 'current_employer' list, and extracts the 'start_date' value. It then extracts the year component in YYYY format.",
+                    "inputs": [
+                      "'current_employer_start_date': input_data -> 'borrowers' (list) -> first borrower -> 'URLA' -> 'current_employer' (list) -> first employer -> 'start_date' -> 'value'"
+                    ],
+                    "formulas": [
+                      "Split the start_date string by '/', '-', or '.' and select the third element as the year."
+                    ],
+                    "outputs": [
+                      "'start_year': A string representing the year extracted from the current_employer.start_date in YYYY format"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "extract_start_year",
+                      "arguments": [
+                        {
+                          "argument_name": "borrowers",
+                          "data_type": "List[Dictionary]",
+                          "description": "List of borrower dictionaries containing employment details",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "URLA": {
+                                  "type": "object",
+                                  "properties": {
+                                    "current_employer": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "start_date": {
+                                            "type": "object",
+                                            "properties": {
+                                              "value": {
+                                                "type": "string",
+                                                "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "start_year",
+                          "data_type": "String",
+                          "description": "A string representing the year extracted from the current_employer.start_date in YYYY format"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "classify_employment_tenure",
+                "subtasks": [
+                  {
+                    "subtask_id": "2.a",
+                    "description": "Calculate the difference between the application_date and current_employer.start_date to classify the employment tenure. If the start_date is less than or equal to two years before the application_date (i.e. start_year \u2264 (computed_application_year - 2)), classify the employment as 'long_tenured'. Otherwise, classify it as 'recently_hired'. The comparison is performed using the extracted year values.",
+                    "inputs": [
+                      "'application_date': input_data -> 'application_date' -> 'value' (used indirectly via computed_application_year from Task 1.a)",
+                      "'current_employer_start_date': input_data -> 'borrowers' (list) -> first borrower -> 'URLA' -> 'current_employer' (list) -> first employer -> 'start_date' -> 'value'",
+                      "'computed_application_year': output from Task 1.a",
+                      "'start_year': output from Task 1.b"
+                    ],
+                    "formulas": [
+                      "If numeric(start_year) <= numeric(computed_application_year) - 2 then classification = 'long_tenured'; otherwise classification = 'recently_hired'"
+                    ],
+                    "outputs": [
+                      "'employment_tenure_classification': A string that is either 'long_tenured' or 'recently_hired'"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "classify_employment_tenure",
+                      "arguments": [
+                        {
+                          "argument_name": "application_date",
+                          "data_type": "String (Date)",
+                          "description": "Date of the application in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['application_date']['value']"
+                        },
+                        {
+                          "argument_name": "current_employer_start_date",
+                          "data_type": "String (Date)",
+                          "description": "Start date of the current employer in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['start_date']['value']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "Year extracted from application_date in YYYY format from Task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        },
+                        {
+                          "argument_name": "start_year",
+                          "data_type": "String",
+                          "description": "Year extracted from the current_employer.start_date in YYYY format from Task 1.b",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.b']['start_year']"
+                        }
+                      ],
+                      "return_type": "String",
+                      "return_description": [
+                        {
+                          "field_name": "employment_tenure_classification",
+                          "data_type": "String",
+                          "description": "A string that is either 'long_tenured' or 'recently_hired'"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "decision_flow",
+                "subtasks": [
+                  {
+                    "subtask_id": "3.a",
+                    "description": "Evaluate the condition for long-tenured employment. If the employment_tenure_classification is 'long_tenured', then the decision is to skip to Step 4 (Long-Tenured Employment Validation).",
+                    "inputs": [
+                      "'employment_tenure_classification': output from Task 2.a"
+                    ],
+                    "formulas": [],
+                    "outputs": [
+                      "'decision': String indicating that the process should skip to Step 4"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": "Step 4",
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "evaluate_long_tenured_employment",
+                      "arguments": [
+                        {
+                          "argument_name": "employment_tenure_classification",
+                          "data_type": "String",
+                          "description": "Output from Task 2.a, indicating if the employment is 'long_tenured' or 'recently_hired'.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "decision",
+                          "data_type": "String",
+                          "description": "String indicating that the process should skip to Step 4."
+                        },
+                        {
+                          "field_name": "skip_task",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether the task should skip to Step 4."
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "3.b",
+                    "description": "Evaluate if the employment is 'recently_hired' and if the start_year equals computed_application_year - 2 OR if the employment is 'recently_hired' with start_year equal to computed_application_year - 1 and the current_employer.start_date is exactly '01/01/{computed_application_year-1}'. If either case is true, then the process should skip to Step 5 (Recently Hired with Start Year computed_application_year-2).",
+                    "inputs": [
+                      "'employment_tenure_classification': output from Task 2.a",
+                      "'start_year': output from Task 1.b",
+                      "'computed_application_year': output from Task 1.a",
+                      "'current_employer_start_date': input_data -> 'borrowers' (list) -> first borrower -> 'URLA' -> 'current_employer' (list) -> first employer -> 'start_date' -> 'value'"
+                    ],
+                    "formulas": [
+                      "Case 1: If employment_tenure_classification is 'recently_hired' AND numeric(start_year) == (numeric(computed_application_year) - 2) then condition met.",
+                      "Case 2: Or if employment_tenure_classification is 'recently_hired' AND numeric(start_year) == (numeric(computed_application_year) - 1) AND current_employer_start_date equals '01/01/' concatenated with (computed_application_year - 1) then condition met."
+                    ],
+                    "outputs": [
+                      "'decision': String indicating that the process should skip to Step 5"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": "Step 5",
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "evaluate_recently_hired_employment_case_1",
+                      "arguments": [
+                        {
+                          "argument_name": "employment_tenure_classification",
+                          "data_type": "String",
+                          "description": "Output from Task 2.a, indicating if the employment is 'long_tenured' or 'recently_hired'.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                        },
+                        {
+                          "argument_name": "start_year",
+                          "data_type": "String",
+                          "description": "Output from Task 1.b, representing the year extracted from the current_employer.start_date in YYYY format.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.b']['start_year']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "Output from Task 1.a, representing the year extracted from application_date in YYYY format.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        },
+                        {
+                          "argument_name": "current_employer_start_date",
+                          "data_type": "String (Date)",
+                          "description": "Input data from 'borrowers' list, first borrower, 'URLA', 'current_employer' list, first employer, 'start_date'. Valid formats are MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['start_date']['value']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "decision",
+                          "data_type": "String",
+                          "description": "String indicating that the process should skip to Step 5."
+                        },
+                        {
+                          "field_name": "skip_task",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether the task should skip to Step 5."
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "subtask_id": "3.c",
+                    "description": "Evaluate if the employment is 'recently_hired' with start_year equal to computed_application_year - 1 (but with a start date other than '01/01/{computed_application_year-1}') OR if the start_year equals computed_application_year. If either condition is true, then the process should skip to Step 6 (Recently Hired with Non-January Start Date).",
+                    "inputs": [
+                      "'employment_tenure_classification': output from Task 2.a",
+                      "'start_year': output from Task 1.b",
+                      "'computed_application_year': output from Task 1.a",
+                      "'current_employer_start_date': input_data -> 'borrowers' (list) -> first borrower -> 'URLA' -> 'current_employer' (list) -> first employer -> 'start_date' -> 'value'"
+                    ],
+                    "formulas": [
+                      "Case 1: If employment_tenure_classification is 'recently_hired' AND numeric(start_year) == (numeric(computed_application_year) - 1) AND current_employer_start_date is not equal to '01/01/' concatenated with (computed_application_year - 1) then condition met.",
+                      "Case 2: Or if employment_tenure_classification is 'recently_hired' AND numeric(start_year) == numeric(computed_application_year) then condition met."
+                    ],
+                    "outputs": [
+                      "'decision': String indicating that the process should skip to Step 6"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": "Step 6",
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": false,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "evaluate_recently_hired_employment_case_2",
+                      "arguments": [
+                        {
+                          "argument_name": "employment_tenure_classification",
+                          "data_type": "String",
+                          "description": "Output from Task 2.a, indicating if the employment is 'long_tenured' or 'recently_hired'.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                        },
+                        {
+                          "argument_name": "start_year",
+                          "data_type": "String",
+                          "description": "Output from Task 1.b, representing the year extracted from the current_employer.start_date in YYYY format.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.b']['start_year']"
+                        },
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "Output from Task 1.a, representing the year extracted from application_date in YYYY format.",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        },
+                        {
+                          "argument_name": "current_employer_start_date",
+                          "data_type": "String (Date)",
+                          "description": "Input data from 'borrowers' list, first borrower, 'URLA', 'current_employer' list, first employer, 'start_date'. Valid formats are MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY.",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['start_date']['value']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "decision",
+                          "data_type": "String",
+                          "description": "String indicating that the process should skip to Step 6."
+                        },
+                        {
+                          "field_name": "skip_task",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether the task should skip to Step 6."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "long_tenured_employment_validation",
+                "subtasks": [
+                  {
+                    "subtask_id": "4.a",
+                    "description": "Validate long-tenured employment tax documentation. Check whether the following conditions are met for the most recent year (computed_application_year - 1): (1) At least one Tax Form 1040 exists for the year computed_application_year - 1; (2) At least one Tax Form 1120 exists for the year computed_application_year - 1; and (3) Either at least one Tax Form 1125E exists for the year computed_application_year - 1 OR at least one Tax Form 1120SCHG exists for the year computed_application_year - 1. If all conditions are met, output a message confirming that all required documents are present. Otherwise, output a message stating that required documentation is missing and terminate the process.",
+                    "inputs": [
+                      "'computed_application_year': output from Task 1.a",
+                      "'Tax Form 1040': input_data -> 'borrowers' -> [Tax Form 1040] list where each item has 'tax_year' -> 'value'; filter for (computed_application_year - 1)",
+                      "'Tax Form 1120': input_data -> 'other_doc_types' -> 'Tax Form 1120' list where each item has 'tax_year' -> 'value'; filter for (computed_application_year - 1)",
+                      "'Tax Form 1125E': input_data -> 'other_doc_types' -> 'Tax Form 1125E' list where each item has 'tax_year' -> 'value'; filter for (computed_application_year - 1)",
+                      "'Tax Form 1120SCHG': input_data -> 'other_doc_types' -> 'Tax Form 1120SCHG' list where each item has 'tax_year' -> 'value'; filter for (computed_application_year - 1)"
+                    ],
+                    "formulas": [
+                      "Condition: (Existence of at least one Tax Form 1040 for computed_application_year - 1) AND (Existence of at least one Tax Form 1120 for computed_application_year - 1) AND ((Existence of at least one Tax Form 1125E for computed_application_year - 1) OR (Existence of at least one Tax Form 1120SCHG for computed_application_year - 1))"
+                    ],
+                    "outputs": [
+                      "'message': A string that is either 'All required tax documentation (Form 1040, Form 1120, and either Form 1125E or Form 1120SCHG) for the most recent year is present, satisfying the federal income tax return requirements.' or 'Required tax documentation (Form 1040 and/or Form 1120) for the most recent year is missing. Tax extensions are not permitted; thus, the federal income tax return requirements are not met.'"
+                    ],
+                    "discrepancy_string": null,
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": true,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_long_tenured_employment_tax_docs",
+                      "arguments": [
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "A string representing the year extracted from application_date in YYYY format. Output from Task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        },
+                        {
+                          "argument_name": "tax_form_1040",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1040 documents for borrowers, filtered for the year computed_application_year - 1.",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1040.Tax Return Year String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['borrowers'][0]['Tax Form 1040']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120 documents, filtered for the year computed_application_year - 1.",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120.taxForm1120TaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120']"
+                        },
+                        {
+                          "argument_name": "tax_form_1125e",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1125E documents, filtered for the year computed_application_year - 1.",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1125E.taxForm1125ETaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1125E']"
+                        },
+                        {
+                          "argument_name": "tax_form_1120schg",
+                          "data_type": "List[dict]",
+                          "description": "List of Tax Form 1120SCHG documents, filtered for the year computed_application_year - 1.",
+                          "argument_schema": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tax_year": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "Tax Form 1120SCHG.taxForm1120SCHGTaxYear String (Year)"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "data_access_str": "input_data['other_doc_types']['Tax Form 1120SCHG']"
+                        }
+                      ],
+                      "return_type": "Tuple[String, Boolean]",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string that is either 'All required tax documentation (Form 1040, Form 1120, and either Form 1125E or Form 1120SCHG) for the most recent year is present, satisfying the federal income tax return requirements.' or 'Required tax documentation (Form 1040 and/or Form 1120) for the most recent year is missing. Tax extensions are not permitted; thus, the federal income tax return requirements are not met.'"
+                        },
+                        {
+                          "field_name": "terminate_process",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether the process should be terminated."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "recently_hired_with_start_year_computed_application_year_minus2",
+                "subtasks": [
+                  {
+                    "subtask_id": "5.a",
+                    "description": "For recently hired borrowers whose start_year equals computed_application_year - 2, output a message indicating that 'Employment tenure is less than 2 years with a start year of {computed_application_year-2}. Verify that: (1) The borrower has a prior income history at a similar or higher level; (2) The borrower\u2019s previous field matches the current business\u2019s products or services; or (3) The borrower\u2019s prior role had comparable responsibilities to the current business.' Then terminate the process.",
+                    "inputs": [
+                      "'computed_application_year': output from Task 1.a",
+                      "'start_year': output from Task 1.b (expected numeric value equal to computed_application_year - 2)",
+                      "'employment_tenure_classification': output from Task 2.a"
+                    ],
+                    "formulas": [],
+                    "outputs": [
+                      "'message': A string with the verification message for recently hired borrowers with start_year equal to computed_application_year - 2"
+                    ],
+                    "discrepancy_string": "b. Employment history of self employment is less than 2 years, therefore validate that; \u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and \u25d8 Borrower was in a field that provides the same products or services as the current business ; or \u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": true,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_recently_hired_borrowers",
+                      "arguments": [
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "A string representing the year extracted from application_date in YYYY format. Output from Task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        },
+                        {
+                          "argument_name": "start_year",
+                          "data_type": "String",
+                          "description": "A string representing the year extracted from the current_employer.start_date in YYYY format. Output from Task 1.b",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.b']['start_year']"
+                        },
+                        {
+                          "argument_name": "employment_tenure_classification",
+                          "data_type": "String",
+                          "description": "A string that is either 'long_tenured' or 'recently_hired'. Output from Task 2.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string with the verification message for recently hired borrowers with start_year equal to computed_application_year - 2"
+                        },
+                        {
+                          "field_name": "terminate_process",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether the process should be terminated."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "task_name": "recently_hired_with_start_year_computed_application_year_minus1_non_january_start_date",
+                "subtasks": [
+                  {
+                    "subtask_id": "6.a",
+                    "description": "For recently hired borrowers with a start_year equal to computed_application_year - 1 whose current_employer.start_date is not January 1st of computed_application_year - 1, output a message indicating that 'Self-employment income cannot be used for qualification, as the Tax Forms 1040 and 1120 do not reflect a full 12 months of income from the current business due to a start date after January 1st of {computed_application_year-1}.' Then terminate the process.",
+                    "inputs": [
+                      "'computed_application_year': output from Task 1.a",
+                      "'start_year': output from Task 1.b (expected numeric value equal to computed_application_year - 1)",
+                      "'current_employer_start_date': input_data -> 'borrowers' (list) -> first borrower -> 'URLA' -> 'current_employer' (list) -> first employer -> 'start_date' -> 'value'",
+                      "'employment_tenure_classification': output from Task 2.a"
+                    ],
+                    "formulas": [],
+                    "outputs": [
+                      "'message': A string with the explanation message for the inability to use self-employment income for qualification."
+                    ],
+                    "discrepancy_string": "1.c. Income for Schedule C business cannot be considered for qualification, as the Personal Tax Returns 1040 will not reflect a fullyear (12 months) of self-employment income from the current business.",
+                    "skip_to_task": null,
+                    "skip_to_htp": null,
+                    "terminate_htp": false,
+                    "terminate_process": true,
+                    "execute_and_return_output_schema": null,
+                    "execute_and_return": null,
+                    "function_details": {
+                      "function_name": "validate_recently_hired_borrower",
+                      "arguments": [
+                        {
+                          "argument_name": "computed_application_year",
+                          "data_type": "String",
+                          "description": "A string representing the year extracted from application_date in YYYY format. Output from Task 1.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                        },
+                        {
+                          "argument_name": "start_year",
+                          "data_type": "String",
+                          "description": "A string representing the year extracted from the current_employer.start_date in YYYY format. Output from Task 1.b",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['extract_dates_and_years']['1.b']['start_year']"
+                        },
+                        {
+                          "argument_name": "current_employer_start_date",
+                          "data_type": "String (Date)",
+                          "description": "The start date of the first employer of the first borrower in the format MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                          "argument_schema": null,
+                          "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['start_date']['value']"
+                        },
+                        {
+                          "argument_name": "employment_tenure_classification",
+                          "data_type": "String",
+                          "description": "A string that is either 'long_tenured' or 'recently_hired'. Output from Task 2.a",
+                          "argument_schema": null,
+                          "data_access_str": "output_data['rule_schedule_c_self_employment_history_requirement']['htp_long_tenured_employment_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                        }
+                      ],
+                      "return_type": "Tuple",
+                      "return_description": [
+                        {
+                          "field_name": "discrepancy_message",
+                          "data_type": "String",
+                          "description": "A string with the explanation message for the inability to use self-employment income for qualification."
+                        },
+                        {
+                          "field_name": "terminate_process",
+                          "data_type": "Boolean",
+                          "description": "Indicates whether the process should be terminated."
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

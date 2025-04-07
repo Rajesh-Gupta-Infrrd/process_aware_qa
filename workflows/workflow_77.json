@@ -1,0 +1,1119 @@
+[
+    {
+        "name": "rule_self_employment_cash_flow_analysis",
+        "question": "Is the trend of self employment cash flow analysis of 1120 business reflect consistent earnings?",
+        "steps": [
+            {
+                "name": "step_extract_and_validate_consistency",
+                "fields": null,
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].URLA",
+                    "other_doc_types.Tax Form 1120",
+                    "other_doc_types.Tax Form 1125E",
+                    "other_doc_types.Tax Form 1120SCHG"
+                ],
+                "expert_instructions": "1. Extract Documents and Validate Consistency\n   From List of Tax Form 1120, sort based on the Year in ascending order and pick the first one and From List of Tax Form 1125E, sort based on the Year in ascending order and pick the first one or From List of Tax Form 1120SCHG, sort based on the Year in ascending order and pick the first one and extract\n   - \"tax_year\" as <Tax Form 1120.Tax Year> in the form YYYY.\n   - \"1120_business_name\" as <Tax Form 1120.BusinessName>.\n   - \"taxable_income\" as <Taxable income> from \"Tax Form 1120\".\n   - \"total_tax\" as <Total tax> from \"Tax Form 1120\".\n   - \"depreciation\" as <Depreciation> from \"Tax Form 1120\".\n   - \"depletion\" as <Depletion> from \"Tax Form 1120\".\n   - \"net_operating_loss\" as <Net operating loss> from \"Tax Form 1120\".\n   - \"special_deductions\" as <Special deductions> from \"Tax Form 1120\".\n   - \"other_income\" as <Other income> from \"Tax Form 1120\".\n   - \"short_term_debt\" as <Mortgages, notes or bonds payable in less than 1 year> from \"Tax Form 1120\".\n   - \"travel_entertainment\" as <Travel & Entertainment Expenses> from \"Tax Form 1120\".\n   - \"cash_distributions\" as <Cash distributions> from \"Tax Form 1120\".\n   If \"Tax Form 1125E\" is present, extract:\n   - \"1125e_business_name\" as <Tax Form 1125E.BusinessName>.\n   - \"1125e_borrower_name\" as <Tax Form 1125E.Name>.\n   - \"preferred_stock_owned\" as <Preferred Stock Owned>.\n   - \"compensation\" as <Amount Of Compensation>.\n   If \"Tax Form 1120SCHG\" is present, extract:\n   - \"schg_business_name\" as <Tax Form 1120SCHG.BusinessName>.\n   - \"schg_borrower_name\" as <Tax Form 1120SCHG.Individuals Owning the Corporation. Name>.\n   - \"percentage_owned\" as <Individuals Owning the Corporation. Percentage Owned>.\n   Validate:\n   - \"1120_business_name\" = \"1125e_business_name\" OR \"schg_business_name\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"1125e_borrower_name\" OR \"schg_borrower_name\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name>\n\n2. Calculate Subtotal Business Income\n   Compute: \"subtotal_business_income\" = \"taxable_income\" - \"total_tax\" + \"depreciation\" + \"depletion\" + \"net_operating_loss\" + \"special_deductions\" - \"other_income\" - \"short_term_debt\" - \"travel_entertainment\" - \"cash_distributions\"\n\n3. Calculate Borrower\u2019s Share of Business Income\n   IF (\"Tax Form 1125E\" is present) THEN  \n      Compute: \"borrower_share_business_income\" = ((\"preferred_stock_owned\" / 100) * \"subtotal_business_income\") + \"compensation\"  \n   ELSE IF (\"Tax Form 1120SCHG\" is present) THEN  \n      Compute: \"borrower_share_business_income\" = ((\"percentage_owned\" / 100) * \"subtotal_business_income\")\n\n4. Calculate Prior Year Monthly Average\n   Compute: \"<tax_year>.monthly_average\" = \"borrower_share_business_income\" / 12\n   Store as \"prior_year_monthly_avg\".\n\n5. Compare Monthly Averages\n   Assume \"tax_year_monthly_avg\" is provided from  Tax Form 1120\n   Compute: \"comparison_percentage\" = ((\"tax_year_monthly_avg\" - \"prior_year_monthly_avg\") / \"prior_year_monthly_avg\") * 100\n\n6. Calculate and Validate Monthly Income\n   IF (\"comparison_percentage\" \u2265 0) THEN  \n      Compute: \"monthly_income\" = (\"tax_year_monthly_avg\" + \"prior_year_monthly_avg\") / 2  \n   ELSE  \n      Store: \"monthly_income\" = \"tax_year_monthly_avg\"\n   IF (\"comparison_percentage\" > 30) THEN  \n      Return Discrepency Message: \"A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" \u2265 0 AND \"comparison_percentage\" \u2264 30) THEN  \n      Return Discrepency Message: \"The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" < 0 AND \"comparison_percentage\" \u2265 -30) THEN  \n      Return Discrepency Message: \"A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\" and terminate the process  \n   ELSE \n      Return Discrepency Message: \"A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.\" and terminate the process  ",
+                "discrepancy_messages": "2. d. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n2. e. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n9. A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability. \n10. The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\n11. A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\n12. A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+                "doc_type_keys": [
+                    "other_doc_types.Tax Form 1120SCHG",
+                    "other_doc_types.Tax Form 1120",
+                    "other_doc_types.Tax Form 1125E",
+                    "borrowers[].URLA"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_extract_and_validate_consistency",
+                        "expert_instructions": "1. Extract Documents and Validate Consistency\n   From List of Tax Form 1120, sort based on the Year in ascending order and pick the first one and From List of Tax Form 1125E, sort based on the Year in ascending order and pick the first one or From List of Tax Form 1120SCHG, sort based on the Year in ascending order and pick the first one and extract\n   - \"tax_year\" as <Tax Form 1120.Tax Year> in the form YYYY.\n   - \"1120_business_name\" as <Tax Form 1120.BusinessName>.\n   - \"taxable_income\" as <Taxable income> from \"Tax Form 1120\".\n   - \"total_tax\" as <Total tax> from \"Tax Form 1120\".\n   - \"depreciation\" as <Depreciation> from \"Tax Form 1120\".\n   - \"depletion\" as <Depletion> from \"Tax Form 1120\".\n   - \"net_operating_loss\" as <Net operating loss> from \"Tax Form 1120\".\n   - \"special_deductions\" as <Special deductions> from \"Tax Form 1120\".\n   - \"other_income\" as <Other income> from \"Tax Form 1120\".\n   - \"short_term_debt\" as <Mortgages, notes or bonds payable in less than 1 year> from \"Tax Form 1120\".\n   - \"travel_entertainment\" as <Travel & Entertainment Expenses> from \"Tax Form 1120\".\n   - \"cash_distributions\" as <Cash distributions> from \"Tax Form 1120\".\n   If \"Tax Form 1125E\" is present, extract:\n   - \"1125e_business_name\" as <Tax Form 1125E.BusinessName>.\n   - \"1125e_borrower_name\" as <Tax Form 1125E.Name>.\n   - \"preferred_stock_owned\" as <Preferred Stock Owned>.\n   - \"compensation\" as <Amount Of Compensation>.\n   If \"Tax Form 1120SCHG\" is present, extract:\n   - \"schg_business_name\" as <Tax Form 1120SCHG.BusinessName>.\n   - \"schg_borrower_name\" as <Tax Form 1120SCHG.Individuals Owning the Corporation. Name>.\n   - \"percentage_owned\" as <Individuals Owning the Corporation. Percentage Owned>.\n   Validate:\n   - \"1120_business_name\" = \"1125e_business_name\" OR \"schg_business_name\" = <URLA1003.Borrower Employer Name> OR <URLA1003.1c Borrower Employer Name>.\n   - \"1125e_borrower_name\" OR \"schg_borrower_name\" = <URLA1003.Borrower Name> OR <URLA 1003 Additional Borrower.Borrower Name>\n\n2. Calculate Subtotal Business Income\n   Compute: \"subtotal_business_income\" = \"taxable_income\" - \"total_tax\" + \"depreciation\" + \"depletion\" + \"net_operating_loss\" + \"special_deductions\" - \"other_income\" - \"short_term_debt\" - \"travel_entertainment\" - \"cash_distributions\"\n\n3. Calculate Borrower\u2019s Share of Business Income\n   IF (\"Tax Form 1125E\" is present) THEN  \n      Compute: \"borrower_share_business_income\" = ((\"preferred_stock_owned\" / 100) * \"subtotal_business_income\") + \"compensation\"  \n   ELSE IF (\"Tax Form 1120SCHG\" is present) THEN  \n      Compute: \"borrower_share_business_income\" = ((\"percentage_owned\" / 100) * \"subtotal_business_income\")\n\n4. Calculate Prior Year Monthly Average\n   Compute: \"<tax_year>.monthly_average\" = \"borrower_share_business_income\" / 12\n   Store as \"prior_year_monthly_avg\".\n\n5. Compare Monthly Averages\n   Assume \"tax_year_monthly_avg\" is provided from  Tax Form 1120\n   Compute: \"comparison_percentage\" = ((\"tax_year_monthly_avg\" - \"prior_year_monthly_avg\") / \"prior_year_monthly_avg\") * 100\n\n6. Calculate and Validate Monthly Income\n   IF (\"comparison_percentage\" \u2265 0) THEN  \n      Compute: \"monthly_income\" = (\"tax_year_monthly_avg\" + \"prior_year_monthly_avg\") / 2  \n   ELSE  \n      Store: \"monthly_income\" = \"tax_year_monthly_avg\"\n   IF (\"comparison_percentage\" > 30) THEN  \n      Return Discrepency Message: \"A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" \u2265 0 AND \"comparison_percentage\" \u2264 30) THEN  \n      Return Discrepency Message: \"The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\" and terminate the process  \n   ELSE IF (\"comparison_percentage\" < 0 AND \"comparison_percentage\" \u2265 -30) THEN  \n      Return Discrepency Message: \"A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\" and terminate the process  \n   ELSE \n      Return Discrepency Message: \"A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.\" and terminate the process  ",
+                        "discrepancy_messages": "2. d. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n2. e. In order to use K-1 income, validate if the business demonstrates adequate liquidity to support the borrower\u2019s withdrawals of cash.\n\n9. A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability. \n10. The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.\n11. A decline in business income upto 30% has been observed. While this may indicate temporary business challenges, further analysis is required.\n12. A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+                        "tasks": [
+                            {
+                                "task_name": "extract_documents_and_validate_consistency",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Sort the list of Tax Form 1120 documents based on the 'tax_year' in ascending order, pick the first document, and extract the following fields from it: 'tax_year' (extracted from Tax Form 1120.tax_year.value in YYYY), '1120_business_name' (extracted from Tax Form 1120.corporation_name.value), 'taxable_income' (extracted from Tax Form 1120.taxable_income.value), 'total_tax' (extracted from Tax Form 1120.total_tax.value), 'depreciation' (extracted from Tax Form 1120.depreciation_from_form_4562.value), 'depletion' (extracted from Tax Form 1120.depletion.value), 'net_operating_loss' (extracted from Tax Form 1120.net_operating_loss.value), 'special_deductions' (extracted from Tax Form 1120.special_deductions.value), 'other_income' (extracted from Tax Form 1120.other_income.value), 'short_term_debt' (extracted from Tax Form 1120.schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year.value), 'travel_entertainment' (extracted from Tax Form 1120.schedule_m1_travel_and_entertainment_expenses.value), and 'cash_distributions' (extracted from Tax Form 1120.schedule_m2_cash_distributions.value).",
+                                        "inputs": [
+                                            " 'docs_1120' :  input_data -> other_doc_types -> 'Tax Form 1120' (list)"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'tax_year': Extracted tax year in YYYY format",
+                                            "'1120_business_name': Extracted business name from Tax Form 1120",
+                                            "'taxable_income': Extracted taxable income value",
+                                            "'total_tax': Extracted total tax value",
+                                            "'depreciation': Extracted depreciation value",
+                                            "'depletion': Extracted depletion value",
+                                            "'net_operating_loss': Extracted net operating loss value",
+                                            "'special_deductions': Extracted special deductions value",
+                                            "'other_income': Extracted other income value",
+                                            "'short_term_debt': Extracted short term debt value",
+                                            "'travel_entertainment': Extracted travel & entertainment expenses value",
+                                            "'cash_distributions': Extracted cash distributions value"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_1120_document_details",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "docs_1120",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1120 documents.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120TaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "corporation_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120CorporationName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "taxable_income": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.3d946349-e4a8-4d54-b71e-72fe26eccf19.Taxable income"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "total_tax": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.903bca39-6c43-4c7c-9921-ff7ed4fa8f09.Total tax"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depreciation_from_form_4562": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120DepreciationfromForm4562 String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "depletion": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120Depletion String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "net_operating_loss": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.11111111111"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "special_deductions": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.22222222222"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "other_income": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120OtherIncome String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_l_mortgages_notes_bonds_payable_in_less_than_1_year_end_of_tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120ScheduleLMortgagesNotesBondsPayableinLessThan1YearEndofTaxYear String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_m1_travel_and_entertainment_expenses": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120ScheduleM1TravelandEntertainmentExpenses String (Currency)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "schedule_m2_cash_distributions": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120.taxForm1120ScheduleM2CashDistributions String (Currency)"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1120']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "tax_year",
+                                                    "data_type": "String",
+                                                    "description": "Extracted tax year in YYYY format"
+                                                },
+                                                {
+                                                    "field_name": "business_name_1120",
+                                                    "data_type": "String",
+                                                    "description": "Extracted business name from Tax Form 1120"
+                                                },
+                                                {
+                                                    "field_name": "taxable_income",
+                                                    "data_type": "String",
+                                                    "description": "Extracted taxable income value"
+                                                },
+                                                {
+                                                    "field_name": "total_tax",
+                                                    "data_type": "String",
+                                                    "description": "Extracted total tax value"
+                                                },
+                                                {
+                                                    "field_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "Extracted depreciation value"
+                                                },
+                                                {
+                                                    "field_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "Extracted depletion value"
+                                                },
+                                                {
+                                                    "field_name": "net_operating_loss",
+                                                    "data_type": "String",
+                                                    "description": "Extracted net operating loss value"
+                                                },
+                                                {
+                                                    "field_name": "special_deductions",
+                                                    "data_type": "String",
+                                                    "description": "Extracted special deductions value"
+                                                },
+                                                {
+                                                    "field_name": "other_income",
+                                                    "data_type": "String",
+                                                    "description": "Extracted other income value"
+                                                },
+                                                {
+                                                    "field_name": "short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "Extracted short term debt value"
+                                                },
+                                                {
+                                                    "field_name": "travel_entertainment",
+                                                    "data_type": "String",
+                                                    "description": "Extracted travel & entertainment expenses value"
+                                                },
+                                                {
+                                                    "field_name": "cash_distributions",
+                                                    "data_type": "String",
+                                                    "description": "Extracted cash distributions value"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "1.b",
+                                        "description": "If the list for Tax Form 1125E is present, sort it in ascending order based on 'tax_year', pick the first document, and extract the following fields: '1125e_business_name' (extracted from Tax Form 1125E.name_of_corporation.value), '1125e_borrower_name' (extracted from Tax Form 1125E.compensation_of_officers[0].name if available), 'preferred_stock_owned' (extracted from Tax Form 1125E.compensation_of_officers[0].preferred_stock_owned), and 'compensation' (extracted from Tax Form 1125E.compensation_of_officers[0].amount_of_compensation).",
+                                        "inputs": [
+                                            " 'docs_1125e' : input_data -> other_doc_types -> 'Tax Form 1125E' (list)"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'1125e_business_name': Extracted business name from Tax Form 1125E",
+                                            "'1125e_borrower_name': Extracted borrower name from Tax Form 1125E",
+                                            "'preferred_stock_owned': Extracted percentage value for preferred stock ownership",
+                                            "'compensation': Extracted amount of compensation"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_1125e_document_details",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "docs_1125e",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1125E documents.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1125E.taxForm1125ETaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "name_of_corporation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1125E.taxForm1125ENameofCorporation String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "compensation_of_officers": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string",
+                                                                                        "description": "abc"
+                                                                                    },
+                                                                                    "preferred_stock_owned": {
+                                                                                        "type": "string",
+                                                                                        "description": ""
+                                                                                    },
+                                                                                    "amount_of_compensation": {
+                                                                                        "type": "string",
+                                                                                        "description": ""
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1125E']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "business_name_1125e",
+                                                    "data_type": "String",
+                                                    "description": "Extracted business name from Tax Form 1125E"
+                                                },
+                                                {
+                                                    "field_name": "borrower_name_1125e",
+                                                    "data_type": "String",
+                                                    "description": "Extracted borrower name from Tax Form 1125E"
+                                                },
+                                                {
+                                                    "field_name": "preferred_stock_owned",
+                                                    "data_type": "String",
+                                                    "description": "Extracted percentage value for preferred stock ownership"
+                                                },
+                                                {
+                                                    "field_name": "compensation",
+                                                    "data_type": "String",
+                                                    "description": "Extracted amount of compensation"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "1.c",
+                                        "description": "If the list for Tax Form 1120SCHG is present, sort it in ascending order based on 'tax_year', pick the first document, and extract the following fields: 'schg_business_name' (extracted from Tax Form 1120SCHG.business_name.value), 'schg_borrower_name' (extracted from the first element in Tax Form 1120SCHG.individuals_owning_the_corporation.value using the field name), and 'percentage_owned' (extracted from Tax Form 1120SCHG.individuals_owning_the_corporation.value -> first item -> percentage_owned).",
+                                        "inputs": [
+                                            "'docs_1120SCHG': input_data -> other_doc_types -> 'Tax Form 1120SCHG' (list)"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'schg_business_name': Extracted business name from Tax Form 1120SCHG",
+                                            "'schg_borrower_name': Extracted borrower name from Tax Form 1120SCHG",
+                                            "'percentage_owned': Extracted percentage owned value"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_1120schg_document_details",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "docs_1120schg",
+                                                    "data_type": "List[dict]",
+                                                    "description": "List of Tax Form 1120SCHG documents.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "tax_year": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120SCHG.taxForm1120SCHGTaxYear String (Year)"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "business_name": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "string",
+                                                                            "description": "Tax Form 1120SCHG.taxForm1120SCHGBusinessName String"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "individuals_owning_the_corporation": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "value": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string",
+                                                                                        "description": "abc"
+                                                                                    },
+                                                                                    "percentage_owned": {
+                                                                                        "type": "string",
+                                                                                        "description": ""
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['other_doc_types']['Tax Form 1120SCHG']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "business_name_schg",
+                                                    "data_type": "String",
+                                                    "description": "Extracted business name from Tax Form 1120SCHG"
+                                                },
+                                                {
+                                                    "field_name": "borrower_name_schg",
+                                                    "data_type": "String",
+                                                    "description": "Extracted borrower name from Tax Form 1120SCHG"
+                                                },
+                                                {
+                                                    "field_name": "percentage_owned",
+                                                    "data_type": "String",
+                                                    "description": "Extracted percentage owned value"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "1.d",
+                                        "description": "Validate the consistency of the extracted business and borrower names. Check that either '1120_business_name' equals '1125e_business_name' OR 'schg_business_name' equals the borrower's employer name. Also, validate that either '1125e_borrower_name' OR 'schg_borrower_name' equals the borrower name from the URLA section. MAKE SURE The arguments for the function should be the following:\n ''1120_business_name': (from Task 1.a output)' \n                        ''1125e_business_name': (from Task 1.b output)' \n                        ''schg_business_name': (from Task 1.c output)' \n                        ''borrower_employer_name': input_data -> borrowers (list) -> first borrower -> URLA -> employer_name -> value' \n                        ''1125e_borrower_name': (from Task 1.b output)' \n                        ''schg_borrower_name': (from Task 1.c output)' \n                        ''borrower_name': input_data -> borrowers (list) -> first borrower -> URLA -> borrower_name -> value'",
+                                        "inputs": [
+                                            "'1120_business_name': (from Task 1.a output)",
+                                            "'1125e_business_name': (from Task 1.b output)",
+                                            "'schg_business_name': (from Task 1.c output)",
+                                            "'borrower_employer_name': input_data -> borrowers (list) -> first borrower -> URLA -> employer_name -> value",
+                                            "'1125e_borrower_name': (from Task 1.b output)",
+                                            "'schg_borrower_name': (from Task 1.c output)",
+                                            "'borrower_name': input_data -> borrowers (list) -> first borrower -> URLA -> borrower_name -> value"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'is_consistent': A Boolean indicating if either business names and borrower names match the expected URLA fields."
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_consistency_of_names",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "business_name_1120",
+                                                    "data_type": "String",
+                                                    "description": "Business name extracted from Task 1.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['business_name_1120']"
+                                                },
+                                                {
+                                                    "argument_name": "business_name_1125e",
+                                                    "data_type": "String",
+                                                    "description": "Business name extracted from Task 1.b output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.b']['business_name_1125e']"
+                                                },
+                                                {
+                                                    "argument_name": "business_name_schg",
+                                                    "data_type": "String",
+                                                    "description": "Business name extracted from Task 1.c output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.c']['business_name_schg']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_employer_name",
+                                                    "data_type": "String",
+                                                    "description": "Employer name from the first borrower in URLA.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['employer_name']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_name_1125e",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name extracted from Task 1.b output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.b']['borrower_name_1125e']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_name_schg",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name extracted from Task 1.c output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.c']['borrower_name_schg']"
+                                                },
+                                                {
+                                                    "argument_name": "borrower_name",
+                                                    "data_type": "String",
+                                                    "description": "Borrower name from the first borrower in URLA.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['borrower_name']['value']"
+                                                }
+                                            ],
+                                            "return_type": "Boolean",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "is_consistent",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates if either business names and borrower names match the expected URLA fields."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_subtotal_business_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "Using the extracted values from Tax Form 1120 documents, compute the subtotal business income using the formula: subtotal_business_income = taxable_income - total_tax + depreciation + depletion + net_operating_loss + special_deductions - other_income - short_term_debt - travel_entertainment - cash_distributions.",
+                                        "inputs": [
+                                            "'taxable_income': from Task 1.a output",
+                                            "'total_tax': from Task 1.a output",
+                                            "'depreciation': from Task 1.a output",
+                                            "'depletion': from Task 1.a output",
+                                            "'net_operating_loss': from Task 1.a output",
+                                            "'special_deductions': from Task 1.a output",
+                                            "'other_income': from Task 1.a output",
+                                            "'short_term_debt': from Task 1.a output",
+                                            "'travel_entertainment': from Task 1.a output",
+                                            "'cash_distributions': from Task 1.a output"
+                                        ],
+                                        "formulas": [
+                                            "subtotal_business_income = taxable_income - total_tax + depreciation + depletion + net_operating_loss + special_deductions - other_income - short_term_debt - travel_entertainment - cash_distributions"
+                                        ],
+                                        "outputs": [
+                                            "'subtotal_business_income': Calculated subtotal business income value"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_subtotal_business_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "taxable_income",
+                                                    "data_type": "String",
+                                                    "description": "Extracted taxable income value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['taxable_income']"
+                                                },
+                                                {
+                                                    "argument_name": "total_tax",
+                                                    "data_type": "String",
+                                                    "description": "Extracted total tax value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['total_tax']"
+                                                },
+                                                {
+                                                    "argument_name": "depreciation",
+                                                    "data_type": "String",
+                                                    "description": "Extracted depreciation value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['depreciation']"
+                                                },
+                                                {
+                                                    "argument_name": "depletion",
+                                                    "data_type": "String",
+                                                    "description": "Extracted depletion value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['depletion']"
+                                                },
+                                                {
+                                                    "argument_name": "net_operating_loss",
+                                                    "data_type": "String",
+                                                    "description": "Extracted net operating loss value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['net_operating_loss']"
+                                                },
+                                                {
+                                                    "argument_name": "special_deductions",
+                                                    "data_type": "String",
+                                                    "description": "Extracted special deductions value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['special_deductions']"
+                                                },
+                                                {
+                                                    "argument_name": "other_income",
+                                                    "data_type": "String",
+                                                    "description": "Extracted other income value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['other_income']"
+                                                },
+                                                {
+                                                    "argument_name": "short_term_debt",
+                                                    "data_type": "String",
+                                                    "description": "Extracted short term debt value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['short_term_debt']"
+                                                },
+                                                {
+                                                    "argument_name": "travel_entertainment",
+                                                    "data_type": "String",
+                                                    "description": "Extracted travel & entertainment expenses value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['travel_entertainment']"
+                                                },
+                                                {
+                                                    "argument_name": "cash_distributions",
+                                                    "data_type": "String",
+                                                    "description": "Extracted cash distributions value from Task 1.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.a']['cash_distributions']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "subtotal_business_income",
+                                                    "data_type": "String",
+                                                    "description": "Calculated subtotal business income value"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_borrowers_share_of_business_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "If Tax Form 1125E is present, compute the borrower's share of business income by using the formula: borrower_share_business_income = ( (preferred_stock_owned / 100) * subtotal_business_income ) + compensation.",
+                                        "inputs": [
+                                            "'preferred_stock_owned': from Task 1.b output",
+                                            "'subtotal_business_income': from Task 2.a output",
+                                            "'compensation': from Task 1.b output"
+                                        ],
+                                        "formulas": [
+                                            "borrower_share_business_income = (preferred_stock_owned / 100) * subtotal_business_income + compensation"
+                                        ],
+                                        "outputs": [
+                                            "'borrower_share_business_income': Calculated borrower share based on Tax Form 1125E data"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_borrower_share_1125e",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "preferred_stock_owned",
+                                                    "data_type": "String",
+                                                    "description": "Extracted percentage value for preferred stock ownership from Task 1.b output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.b']['preferred_stock_owned']"
+                                                },
+                                                {
+                                                    "argument_name": "subtotal_business_income",
+                                                    "data_type": "String",
+                                                    "description": "Calculated subtotal business income value from Task 2.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['calculate_subtotal_business_income']['2.a']['subtotal_business_income']"
+                                                },
+                                                {
+                                                    "argument_name": "compensation",
+                                                    "data_type": "String",
+                                                    "description": "Extracted amount of compensation from Task 1.b output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.b']['compensation']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "borrower_share_business_income",
+                                                    "data_type": "String",
+                                                    "description": "Calculated borrower share based on Tax Form 1125E data"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "3.b",
+                                        "description": "Else if Tax Form 1120SCHG is present, compute the borrower's share of business income using the formula: borrower_share_business_income = ( (percentage_owned / 100) * subtotal_business_income ).",
+                                        "inputs": [
+                                            "'percentage_owned': from Task 1.c output",
+                                            "'subtotal_business_income': from Task 2.a output"
+                                        ],
+                                        "formulas": [
+                                            "borrower_share_business_income = (percentage_owned / 100) * subtotal_business_income"
+                                        ],
+                                        "outputs": [
+                                            "'borrower_share_business_income': Calculated borrower share based on Tax Form 1120SCHG data"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_borrower_share_1120schg",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "percentage_owned",
+                                                    "data_type": "String",
+                                                    "description": "Extracted percentage owned value from Task 1.c output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['extract_documents_and_validate_consistency']['1.c']['percentage_owned']"
+                                                },
+                                                {
+                                                    "argument_name": "subtotal_business_income",
+                                                    "data_type": "String",
+                                                    "description": "Calculated subtotal business income value from Task 2.a output",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['calculate_subtotal_business_income']['2.a']['subtotal_business_income']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "borrower_share_business_income",
+                                                    "data_type": "String",
+                                                    "description": "Calculated borrower share based on Tax Form 1120SCHG data"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_prior_year_monthly_average",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "4.a",
+                                        "description": "Calculate the prior year monthly average by dividing the borrower_share_business_income by 12.",
+                                        "inputs": [
+                                            "'borrower_share_business_income': from Task 3 output"
+                                        ],
+                                        "formulas": [
+                                            "prior_year_monthly_avg = borrower_share_business_income / 12"
+                                        ],
+                                        "outputs": [
+                                            "'prior_year_monthly_avg': Calculated monthly average from prior year business income"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_prior_year_monthly_average",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "borrower_share_business_income",
+                                                    "data_type": "String",
+                                                    "description": "Calculated borrower share based on Tax Form 1125E or 1120SCHG data from Task 3 output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['calculate_borrowers_share_of_business_income']['3.a']['borrower_share_business_income']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "prior_year_monthly_avg",
+                                                    "data_type": "String",
+                                                    "description": "Calculated monthly average from prior year business income."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "compare_monthly_averages",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "5.a",
+                                        "description": "Using the provided tax_year_monthly_avg (extracted from Tax Form 1120) and the calculated prior_year_monthly_avg, compute the comparison percentage using the formula: comparison_percentage = ((tax_year_monthly_avg - prior_year_monthly_avg) / prior_year_monthly_avg) * 100.",
+                                        "inputs": [
+                                            "'tax_year_monthly_avg': output_data -> rule_self_employment_cash_flow_analysis_1120 -> htp_extract_and_validate_documents -> calculate_monthly_average -> 8.a -> monthly_average",
+                                            "'prior_year_monthly_avg': from Task 4.a output"
+                                        ],
+                                        "formulas": [
+                                            "comparison_percentage = ((tax_year_monthly_avg - prior_year_monthly_avg) / prior_year_monthly_avg) * 100"
+                                        ],
+                                        "outputs": [
+                                            "'comparison_percentage': Calculated percentage difference between current and prior monthly averages"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "compute_comparison_percentage",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "tax_year_monthly_avg",
+                                                    "data_type": "String",
+                                                    "description": "The monthly average income for the tax year extracted from Tax Form 1120.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['calculate_monthly_average']['8.a']['monthly_average']"
+                                                },
+                                                {
+                                                    "argument_name": "prior_year_monthly_avg",
+                                                    "data_type": "String",
+                                                    "description": "The monthly average income for the prior year calculated in Task 4.a.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['calculate_prior_year_monthly_average']['4.a']['prior_year_monthly_avg']"
+                                                }
+                                            ],
+                                            "return_type": "Dictionary",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "Calculated percentage difference between current and prior monthly averages."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "calculate_and_validate_monthly_income",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "6.a",
+                                        "description": "Calculate the monthly income based on the comparison_percentage value. If comparison_percentage is greater than or equal to 0, then compute monthly_income = (tax_year_monthly_avg + prior_year_monthly_avg) / 2; otherwise, set monthly_income = tax_year_monthly_avg.",
+                                        "inputs": [
+                                            "'comparison_percentage': from Task 5.a output",
+                                            "'tax_year_monthly_avg': output_data -> rule_self_employment_cash_flow_analysis_1120 -> htp_extract_and_validate_documents -> calculate_monthly_average -> 8.a -> monthly_average",
+                                            "'prior_year_monthly_avg': from Task 4.a output"
+                                        ],
+                                        "formulas": [
+                                            "if comparison_percentage >= 0 then monthly_income = (tax_year_monthly_avg + prior_year_monthly_avg) / 2 else monthly_income = tax_year_monthly_avg"
+                                        ],
+                                        "outputs": [
+                                            "'monthly_income': Calculated monthly income based on the condition"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "calculate_monthly_income",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "Percentage difference between current and prior monthly averages from Task 5.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['compare_monthly_averages']['5.a']['comparison_percentage']"
+                                                },
+                                                {
+                                                    "argument_name": "tax_year_monthly_avg",
+                                                    "data_type": "String",
+                                                    "description": "Monthly average income for the tax year from Task 8.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis_1120']['htp_extract_and_validate_documents']['calculate_monthly_average']['8.a']['monthly_average']"
+                                                },
+                                                {
+                                                    "argument_name": "prior_year_monthly_avg",
+                                                    "data_type": "String",
+                                                    "description": "Monthly average income for the prior year from Task 4.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['calculate_prior_year_monthly_average']['4.a']['prior_year_monthly_avg']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "monthly_income",
+                                                    "data_type": "String",
+                                                    "description": "Calculated monthly income based on the comparison percentage."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "6.b.i",
+                                        "description": "If comparison_percentage > 30, return the discrepancy message: 'A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.' and terminate the process.",
+                                        "inputs": [
+                                            "'comparison_percentage': from Task 5.a output"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'discrepancy_msg': 'A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.'"
+                                        ],
+                                        "discrepancy_string": "A substantial increase in business income exceeding 30% has been identified. This level of increase may require additional verification to confirm sustainability.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_substantial_increase",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "Percentage difference between current and prior monthly averages from Task 5.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['compare_monthly_averages']['5.a']['comparison_percentage']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Message indicating a substantial increase in business income exceeding 30%."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether the process should be terminated."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "6.b.ii",
+                                        "description": "Else if comparison_percentage is between 0 and 30 (inclusive), return the discrepancy message: 'The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.' and terminate the process.",
+                                        "inputs": [
+                                            "'comparison_percentage': from Task 5.a output"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'discrepancy_msg': 'The borrower\\'s business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.'"
+                                        ],
+                                        "discrepancy_string": "The borrower's business income reflects a stable or moderate increasing trend (up to 30%), indicating steady business growth.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_moderate_increase",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "Percentage difference between current and prior monthly averages from Task 5.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['compare_monthly_averages']['5.a']['comparison_percentage']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Message indicating a stable or moderate increasing trend in business income."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether the process should be terminated."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "6.b.iii",
+                                        "description": "Else if comparison_percentage is less than 0 but greater than or equal to -30, return the discrepancy message: 'A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.' and terminate the process.",
+                                        "inputs": [
+                                            "'comparison_percentage': from Task 5.a output"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'discrepancy_msg': 'A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.'"
+                                        ],
+                                        "discrepancy_string": "A decline in business income up to 30% has been observed. While this may indicate temporary business challenges, further analysis is required.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_decline",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "Percentage difference between current and prior monthly averages from Task 5.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['compare_monthly_averages']['5.a']['comparison_percentage']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Message indicating a decline in business income up to 30%."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether the process should be terminated."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "6.b.iv",
+                                        "description": "Else (i.e. comparison_percentage is less than -30), return the discrepancy message: 'A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.' and terminate the process.",
+                                        "inputs": [
+                                            "'comparison_percentage': from Task 5.a output"
+                                        ],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'discrepancy_msg': 'A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.'"
+                                        ],
+                                        "discrepancy_string": "A substantial drop in business income exceeding 30% has been identified, which could indicate financial instability. Please validate if additional analysis and documentation is present to validate income sustainability.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "skip_to_process": null,
+                                        "terminate_htp": true,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "check_substantial_decline",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "comparison_percentage",
+                                                    "data_type": "Float",
+                                                    "description": "Percentage difference between current and prior monthly averages from Task 5.a output.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_cash_flow_analysis']['htp_extract_and_validate_consistency']['compare_monthly_averages']['5.a']['comparison_percentage']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "Message indicating a substantial drop in business income exceeding 30%."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether the process should be terminated."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

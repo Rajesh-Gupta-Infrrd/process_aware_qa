@@ -1,0 +1,483 @@
+[
+    {
+        "name": "rule_self_employment_history_requirement_1065",
+        "question": "Is self employment history requirement for 1065 business meet?",
+        "steps": [
+            {
+                "name": "step_self_employment_history_validation",
+                "fields": "1065 Business \u2192 \nEmployment history",
+                "split_cell": false,
+                "schema_keys": [
+                    "borrowers[].URLA"
+                ],
+                "expert_instructions": "1. Extract Dates and Years\n \n   - From the application_date, extract application_year in the form {computed_application_year}.\n   - \"employment_start_date\" (or \"1b Start Date\") as the employment start date, and extract \"start_year\" in the form YYYY.\n\n2. Classify Employment Tenure\n   Calculate the difference between \"employment_start_date\" and \"application_date\" and classify as:\n   - long_tenured: \"employment_start_date\" \u2264 ({computed_application_year} \u2212 2)\n   - recently_hired: \"employment_start_date\" > ({computed_application_year} \u2212 2)\n\n3. Decision Flow\n   IF (`long_tenured`) THEN  \n      Skip to Step 4 \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-2) or (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` == 01/01/{computed_application_year}-1) THEN  \n      Skip to Step 5  \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` != 01/01/{computed_application_year}-1) or (`recently_hired` AND `start_year` == {computed_application_year}) THEN  \n      Skip to Step 6  \n\n---\n\n4. Long-Tenured Employment Validation  \n   return discrepency message: \"Employment tenure exceeds 2 years as reflected in the latest URLA 1003 or URLA 1003 Additional Borrower, meeting the self-employment history requirement.\" and terminate the process\n\n---\n\n5. Recently Hired with Start Year {computed_application_year}-2  \n   return discrepency message: \"Employment history of self employment is less than 2 years, therefore validate that; \u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and \u25d8 Borrower was in a field that provides the same products or services as the current business; or \u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.\" and terminate the process  \n\n---\n\n6. Recently Hired with Start Year {computed_application_year}-1 and Non-January Start Date  \n   return discrepency message: \"Income for 1065 business cannot be considered for qualification, as the Personal Tax Returns 1040 and Business Tax Return 1065 will not reflect a full year (12 months) of self-employment income from the current business.\" and terminate the process  ",
+                "discrepancy_messages": "1. b. Employment history of self employment is less than 2 years, therefore validate that;\n\u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and\n\u25d8 Borrower was in a field that provides the same products or services as the current business ; or\n\u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.\n\n1.c.  Income for 1065 business cannot be considered for qualification, as the Personal Tax Returns 1040 and Business Tax Return 1065 will not reflect a fullyear (12 months) of self-employment income from the current business.",
+                "doc_type_keys": [
+                    "borrowers[].URLA",
+                    "other_doc_types.Tax Form 1065",
+                    "borrowers[].Tax Form 1040"
+                ],
+                "htps": [
+                    {
+                        "name": "htp_self_employment_history_validation",
+                        "expert_instructions": "1. Extract Dates and Years\n \n   - From the application_date, extract application_year in the form {computed_application_year}.\n   - \"employment_start_date\" (or \"1b Start Date\") as the employment start date, and extract \"start_year\" in the form YYYY.\n\n2. Classify Employment Tenure\n   Calculate the difference between \"employment_start_date\" and \"application_date\" and classify as:\n   - long_tenured: \"employment_start_date\" \u2264 ({computed_application_year} \u2212 2)\n   - recently_hired: \"employment_start_date\" > ({computed_application_year} \u2212 2)\n\n3. Decision Flow\n   IF (`long_tenured`) THEN  \n      Skip to Step 4 \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-2) or (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` == 01/01/{computed_application_year}-1) THEN  \n      Skip to Step 5  \n   IF (`recently_hired` AND `start_year` == {computed_application_year}-1 AND `current_employer.start_date` != 01/01/{computed_application_year}-1) or (`recently_hired` AND `start_year` == {computed_application_year}) THEN  \n      Skip to Step 6  \n\n---\n\n4. Long-Tenured Employment Validation  \n   return discrepency message: \"Employment tenure exceeds 2 years as reflected in the latest URLA 1003 or URLA 1003 Additional Borrower, meeting the self-employment history requirement.\" and terminate the process\n\n---\n\n5. Recently Hired with Start Year {computed_application_year}-2  \n   return discrepency message: \"Employment history of self employment is less than 2 years, therefore validate that; \u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and \u25d8 Borrower was in a field that provides the same products or services as the current business; or \u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.\" and terminate the process  \n\n---\n\n6. Recently Hired with Start Year {computed_application_year}-1 and Non-January Start Date  \n   return discrepency message: \"Income for 1065 business cannot be considered for qualification, as the Personal Tax Returns 1040 and Business Tax Return 1065 will not reflect a full year (12 months) of self-employment income from the current business.\" and terminate the process  ",
+                        "discrepancy_messages": "1. b. Employment history of self employment is less than 2 years, therefore validate that;\n\u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and\n\u25d8 Borrower was in a field that provides the same products or services as the current business ; or\n\u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.\n\n1.c.  Income for 1065 business cannot be considered for qualification, as the Personal Tax Returns 1040 and Business Tax Return 1065 will not reflect a fullyear (12 months) of self-employment income from the current business.",
+                        "tasks": [
+                            {
+                                "task_name": "extract_dates_and_years",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "1.a",
+                                        "description": "Extract the application year by parsing the 'application_date'. Traverse the input data as follows: input_data -> application_date -> value. Convert the date string (which may be in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY format) to extract the year portion (YYYY) and assign it to computed_application_year.",
+                                        "inputs": [
+                                            "'application_date': input_data -> application_date -> value"
+                                        ],
+                                        "formulas": [
+                                            "computed_application_year = extract the year (YYYY) from the 'application_date' string by splitting on '/', '-', or '.'"
+                                        ],
+                                        "outputs": [
+                                            "'computed_application_year': The year extracted in YYYY format from the application_date"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_application_year",
+                                            "function_description": "Extracts the year from the application_date string and returns it as computed_application_year.",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "application_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['application_date']['value']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the application_date"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "1.b",
+                                        "description": "Extract the employment start date from the first employer of the first borrower. Traverse the input data as follows: input_data -> borrowers (list) -> first borrower -> URLA -> current_employer (list) -> first employer -> start_date. Parse the date string (which may be in MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY format) to extract the year portion (YYYY) and assign it to start_year.",
+                                        "inputs": [
+                                            "'employment_start_date': input_data -> borrowers -> first borrower -> URLA -> current_employer -> first employer -> start_date"
+                                        ],
+                                        "formulas": [
+                                            "start_year = extract the year (YYYY) from the 'employment_start_date' string by splitting on '/', '-', or '.'"
+                                        ],
+                                        "outputs": [
+                                            "'start_year': The year extracted in YYYY format from the employment_start_date"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "extract_employment_start_year",
+                                            "function_description": "Extracts the year from the employment_start_date string of the first employer of the first borrower and returns it as start_year.",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "borrowers",
+                                                    "data_type": "List[Dictionary]",
+                                                    "description": "List of borrowers containing employment details.",
+                                                    "argument_schema": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "URLA": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "current_employer": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "start_date": {
+                                                                                        "type": "object",
+                                                                                        "properties": {
+                                                                                            "value": {
+                                                                                                "type": "string",
+                                                                                                "description": "Date in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY"
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "data_access_str": "input_data['borrowers']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "start_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the employment_start_date"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "classify_employment_tenure",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "2.a",
+                                        "description": "Compare the extracted start_year with the computed_application_year to classify the employment tenure. Convert both values to integers and perform the following comparison: If start_year is less than or equal to (computed_application_year - 2), then classify the employment as 'long_tenured'; otherwise, classify it as 'recently_hired'.",
+                                        "inputs": [
+                                            "'computed_application_year': (from Task 1.a output)",
+                                            "'start_year': (from Task 1.b output)"
+                                        ],
+                                        "formulas": [
+                                            "if int(start_year) <= int(computed_application_year) - 2 then employment_tenure_classification = 'long_tenured' else employment_tenure_classification = 'recently_hired'"
+                                        ],
+                                        "outputs": [
+                                            "'employment_tenure_classification': A string with value either 'long_tenured' or 'recently_hired'"
+                                        ],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "classify_employment_tenure",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the application_date. Output from Task 1.a",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                },
+                                                {
+                                                    "argument_name": "start_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the employment_start_date. Output from Task 1.b",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['extract_dates_and_years']['1.b']['start_year']"
+                                                }
+                                            ],
+                                            "return_type": "String",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "employment_tenure_classification",
+                                                    "data_type": "String",
+                                                    "description": "A string with value either 'long_tenured' or 'recently_hired' based on the comparison of start_year and computed_application_year."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "decision_flow",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "3.a",
+                                        "description": "Evaluate if the borrower is long tenured. If the computed 'employment_tenure_classification' equals 'long_tenured', then immediately skip to the 'long_tenured_employment_validation' task (Task 4).",
+                                        "inputs": [
+                                            "'employment_tenure_classification': (from Task 2.a output)"
+                                        ],
+                                        "formulas": [
+                                            "if employment_tenure_classification == 'long_tenured' then skip to Task 4"
+                                        ],
+                                        "outputs": [],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": "long_tenured_employment_validation",
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "evaluate_long_tenured_borrower",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "employment_tenure_classification",
+                                                    "data_type": "String",
+                                                    "description": "Classification of employment tenure, expected to be 'long_tenured' or 'recently_hired'.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the 'long_tenured_employment_validation' task."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "3.b",
+                                        "description": "Evaluate if the borrower is recently hired with sufficient gap. If 'employment_tenure_classification' equals 'recently_hired' and either (start_year equals computed_application_year - 2) OR (start_year equals computed_application_year - 1 AND current_employer.start_date equals '01/01/{computed_application_year - 1}'), then skip to the 'recently_hired_start_year_computed_year_minus_2' task (Task 5).",
+                                        "inputs": [
+                                            "'employment_tenure_classification': (from Task 2.a output)",
+                                            "'start_year': (from Task 1.b output)",
+                                            "'current_employer_start_date': input_data -> borrowers -> first borrower -> URLA -> current_employer -> first employer -> start_date",
+                                            "'computed_application_year': (from Task 1.a output)"
+                                        ],
+                                        "formulas": [
+                                            "if employment_tenure_classification == 'recently_hired' AND (int(start_year) == int(computed_application_year) - 2 OR (int(start_year) == int(computed_application_year) - 1 AND current_employer_start_date == '01/01/' + str(int(computed_application_year) - 1))) then skip to Task 5"
+                                        ],
+                                        "outputs": [],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": "recently_hired_start_year_computed_year_minus_2",
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "evaluate_recently_hired_with_sufficient_gap",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "employment_tenure_classification",
+                                                    "data_type": "String",
+                                                    "description": "Classification of employment tenure, expected to be 'long_tenured' or 'recently_hired'.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                                                },
+                                                {
+                                                    "argument_name": "start_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the employment_start_date. Output from Task 1.b.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['extract_dates_and_years']['1.b']['start_year']"
+                                                },
+                                                {
+                                                    "argument_name": "current_employer_start_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Start date of the current employer in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['start_date']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the application_date. Output from Task 1.a.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the 'recently_hired_start_year_computed_year_minus_2' task."
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "subtask_id": "3.c",
+                                        "description": "Evaluate if the borrower is recently hired with an insufficient gap. If 'employment_tenure_classification' equals 'recently_hired' and either (start_year equals computed_application_year - 1 AND current_employer.start_date is not '01/01/{computed_application_year - 1}') OR (start_year equals computed_application_year), then skip to the 'recently_hired_start_year_computed_year_minus_1_non_january_start' task (Task 6).",
+                                        "inputs": [
+                                            "'employment_tenure_classification': (from Task 2.a output)",
+                                            "'start_year': (from Task 1.b output)",
+                                            "'current_employer_start_date': input_data -> borrowers -> first borrower -> URLA -> current_employer -> first employer -> start_date",
+                                            "'computed_application_year': (from Task 1.a output)"
+                                        ],
+                                        "formulas": [
+                                            "if employment_tenure_classification == 'recently_hired' AND ((int(start_year) == int(computed_application_year) - 1 AND current_employer_start_date != '01/01/' + str(int(computed_application_year) - 1)) OR (int(start_year) == int(computed_application_year))) then skip to Task 6"
+                                        ],
+                                        "outputs": [],
+                                        "discrepancy_string": null,
+                                        "skip_to_task": "recently_hired_start_year_computed_year_minus_1_non_january_start",
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": false,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "evaluate_recently_hired_with_insufficient_gap",
+                                            "arguments": [
+                                                {
+                                                    "argument_name": "employment_tenure_classification",
+                                                    "data_type": "String",
+                                                    "description": "Classification of employment tenure, expected to be 'long_tenured' or 'recently_hired'.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['classify_employment_tenure']['2.a']['employment_tenure_classification']"
+                                                },
+                                                {
+                                                    "argument_name": "start_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the employment_start_date. Output from Task 1.b.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['extract_dates_and_years']['1.b']['start_year']"
+                                                },
+                                                {
+                                                    "argument_name": "current_employer_start_date",
+                                                    "data_type": "String (Date)",
+                                                    "description": "Start date of the current employer in format: MM/DD/YYYY, MM-DD-YYYY, or MM.DD.YYYY.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "input_data['borrowers'][0]['URLA']['current_employer'][0]['start_date']['value']"
+                                                },
+                                                {
+                                                    "argument_name": "computed_application_year",
+                                                    "data_type": "String",
+                                                    "description": "The year extracted in YYYY format from the application_date. Output from Task 1.a.",
+                                                    "argument_schema": null,
+                                                    "data_access_str": "output_data['rule_self_employment_history_requirement_1065']['htp_self_employment_history_validation']['extract_dates_and_years']['1.a']['computed_application_year']"
+                                                }
+                                            ],
+                                            "return_type": "Tuple[Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "skip_task",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to skip to the 'recently_hired_start_year_computed_year_minus_1_non_january_start' task."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "long_tenured_employment_validation",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "4.a",
+                                        "description": "Since the borrower is classified as long tenured, return the discrepancy message: 'Employment tenure exceeds 2 years as reflected in the latest URLA 1003 or URLA 1003 Additional Borrower, meeting the self-employment history requirement.' After returning this message, terminate the process.",
+                                        "inputs": [],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'discrepancy_msg': The discrepancy message indicating long tenured employment meets the self-employment history requirement"
+                                        ],
+                                        "discrepancy_string": "Employment tenure exceeds 2 years as reflected in the latest URLA 1003 or URLA 1003 Additional Borrower, meeting the self-employment history requirement.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_long_tenured_employment",
+                                            "arguments": [],
+                                            "function_description": "This function checks if the borrower is classified as long tenured and returns a discrepancy message indicating that the employment tenure exceeds 2 years, meeting the self-employment history requirement.",
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The discrepancy message indicating long tenured employment meets the self-employment history requirement."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "recently_hired_start_year_computed_year_minus_2",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "5.a",
+                                        "description": "Since the borrower is recently hired with start year equal to (computed_application_year - 2), return the discrepancy message: 'Employment history of self employment is less than 2 years, therefore validate that; \u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and \u25d8 Borrower was in a field that provides the same products or services as the current business; or \u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.' After returning this message, terminate the process.",
+                                        "inputs": [],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'discrepancy_msg': The discrepancy message indicating insufficient self-employment history for a 2-year period."
+                                        ],
+                                        "discrepancy_string": "Employment history of self employment is less than 2 years, therefore validate that; \u25d8 Borrower has a history of receipt of prior income at the same (or greater) level; and \u25d8 Borrower was in a field that provides the same products or services as the current business; or \u25d8 Borrower was in an occupation in which they had similar responsibilities to those undertaken in connection with the current business.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "validate_recently_hired_employment_history",
+                                            "arguments": [],
+                                            "return_type": "Tuple",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The discrepancy message indicating insufficient self-employment history for a 2-year period."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "task_name": "recently_hired_start_year_computed_year_minus_1_non_january_start",
+                                "subtasks": [
+                                    {
+                                        "subtask_id": "6.a",
+                                        "description": "Since the borrower is recently hired with either start year equal to (computed_application_year - 1) and a non-January start date or start year equal to computed_application_year, return the discrepancy message: 'Income for 1065 business cannot be considered for qualification, as the Personal Tax Returns 1040 and Business Tax Return 1065 will not reflect a full year (12 months) of self-employment income from the current business.' Then, terminate the process.",
+                                        "inputs": [],
+                                        "formulas": [],
+                                        "outputs": [
+                                            "'discrepancy_msg': The discrepancy message indicating that 1065 business income cannot be qualified due to an incomplete 12-month self-employment period."
+                                        ],
+                                        "discrepancy_string": "Income for 1065 business cannot be considered for qualification, as the Personal Tax Returns 1040 and Business Tax Return 1065 will not reflect a full year (12 months) of self-employment income from the current business.",
+                                        "skip_to_task": null,
+                                        "skip_to_htp": null,
+                                        "terminate_htp": false,
+                                        "terminate_process": true,
+                                        "execute_and_return_output_schema": null,
+                                        "execute_and_return": null,
+                                        "function_details": {
+                                            "function_name": "generate_discrepancy_message",
+                                            "arguments": [],
+                                            "return_type": "Tuple[String, Boolean]",
+                                            "return_description": [
+                                                {
+                                                    "field_name": "discrepancy_message",
+                                                    "data_type": "String",
+                                                    "description": "The discrepancy message indicating that 1065 business income cannot be qualified due to an incomplete 12-month self-employment period."
+                                                },
+                                                {
+                                                    "field_name": "terminate_process",
+                                                    "data_type": "Boolean",
+                                                    "description": "Indicates whether to terminate the process."
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]
