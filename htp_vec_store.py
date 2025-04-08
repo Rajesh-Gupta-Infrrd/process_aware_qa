@@ -92,6 +92,7 @@ class htp_vector_store:
                     "step": step['name'],
                 }
                 content = (
+                    f"Rule - Name: {rule['name']} |"
                     f"Step - Name: {step['name']} , Expert Instructions:{step['expert_instructions']} | "
                 )
                 records.append({
@@ -108,6 +109,7 @@ class htp_vector_store:
 
                     }
                     content = (
+                        f"Rule - Name: {rule['name']} | Step - Name: {step['name']} |"
                         f"HTP - Name: {htp['name']} , Expert Instructions:{htp['expert_instructions']} | "
 
                     )
@@ -127,6 +129,7 @@ class htp_vector_store:
                                 "subtask":subtask['subtask_id']
                             }
                             content = (
+                                f"Rule - Name: {rule['name']} | Step - Name: {step['name']} | HTP - Name: {htp['name']} |"
                                 f"Task - Name: {task['task_name']} | "
                                 f"Subtask: {subtask['description']}"
                             )
@@ -164,7 +167,7 @@ class htp_vector_store:
         return insert_result
 
     # Search    
-    def hybrid_search(self, query: str, top_k: int = 3, depth: int = None):
+    def hybrid_search(self, query: str, top_k: int = 3, depth: int = None , score_boosts: Dict[str, Dict[str, float]] = None):
 
         # Generate query embedding
         query_embedding = self.model.encode(query, normalize_embeddings=True).tolist()
@@ -184,43 +187,75 @@ class htp_vector_store:
             param=search_params,
             limit=top_k,
             expr=expr,
-            output_fields=[ "file_path","lineage", "content"]
+            output_fields=[ "file_path","lineage", "content","depth"]
         )
         
         # Process results
-        return [{
-            "score": hit.score,
-            "file_path":hit.entity.get('file_path'),
-            "lineage": hit.entity.get('lineage'),
-            "content": hit.entity.get('content')
-        } for hit in results[0]]
+        processed = []
+        for hit in results[0]:
+            depth_val = hit.entity.get("depth")
+            # Invert depth to get level name (for score_boost)
+            level_map = {3: "rule", 2: "step", 1: "htp", 0: "subtask"}
+            level = level_map.get(depth_val, "subtask")
+            
+            score = hit.score
+            if score_boosts and "level" in score_boosts:
+                boost = score_boosts["level"].get(level, 1.0)
+                score *= boost
+
+            processed.append({
+                "score": score,
+                "file_path": hit.entity.get("file_path"),
+                "lineage": hit.entity.get("lineage"),
+                "content": hit.entity.get("content"),
+                "metadata": {"level": level, "depth": depth_val}
+            })
+        
+        return processed
     
     def get_best_context_by_level(self, query: str, top_k: int = 3):
-        level_scores = {}
-        level_results = {}
-        depth_priority = {
-            "rule": 3,
-            "step": 2,
-            "htp": 1,
-            "subtask": 0,
+        # Define level weights (priority boost)
+        level_weights = {
+            "rule": 1.1,
+            "step": 1.3,
+            "htp": 1.2,
+            "subtask": 1.0
         }
 
-        for level, depth in depth_priority.items():
-            results = self.hybrid_search(query=query, top_k=top_k, depth=depth)
+        # Single search with score boosting
+        raw_results = self.hybrid_search(
+            query=query,
+            top_k=top_k*4,  # Get extra results for filtering
+            score_boosts={"level": level_weights}
+        )
 
-            if results:
-                avg_score = sum(item["score"] for item in results) / len(results)
-                level_scores[level] = avg_score
-                level_results[level] = results
-
-        if not level_scores:
+        # Early exit if no results
+        if not raw_results:
             print("❌ No results found at any level.")
             return []
 
-        best_level = max(level_scores, key=level_scores.get)
-        print(level_scores)
-        print(f"✅ Best level: {best_level.upper()} | Score: {level_scores[best_level]:.3f}")
-        return level_results[best_level]
+        # Group results by level while preserving order
+        level_groups = {}
+        for result in raw_results:
+            level = result["metadata"]["level"]
+            level_groups.setdefault(level, []).append(result)
+
+        # Calculate group scores using weighted average
+        group_scores = {}
+        for level, items in level_groups.items():
+            weighted_scores = [item["score"] * level_weights[level] for item in items[:top_k]]
+            group_scores[level] = sum(weighted_scores) / len(weighted_scores)
+
+        # Find best group
+        best_level = max(group_scores, key=group_scores.get)
+        best_results = sorted(
+            level_groups[best_level],
+            key=lambda x: x["score"],
+            reverse=True
+        )[:top_k]
+
+        print(f"🏆 Best level: {best_level.upper()} | Score: {group_scores[best_level]:.3f}")
+        return best_results
 
     
     # Add new htps
@@ -244,8 +279,10 @@ class htp_vector_store:
 
 """# Main Execution Flow
 htpvs=htp_vector_store(milvus_uri="htp_vec_store.db",htp_dir="./workflows")
+
 #Adding new htps
 #htpvs.add_htps("./new_workflows","./workflows")
+
 # Example queries
 print("=== Bussiness Document Validation ===")
 results = htpvs.get_best_context_by_level(
@@ -257,7 +294,6 @@ for res in results:
 print("\n=== Employment tenure Validation ===")
 results = htpvs.get_best_context_by_level(
     "why does the employment tenure is classified as recently_hired?",
-    top_k=3
 )
 for res in results:
     print(f"Score: [{res['score']:.3f}] \n File_path : {res['file_path']} \n Content : {res['content']}\n")

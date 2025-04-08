@@ -136,7 +136,7 @@ class ProcessAwareResponseGenerator:
 if __name__ == "__main__":
     log_dir="./logs"
     api_key = os.environ["OPENAI_API_KEY"]  # Replace with your API key
-    responseGenerator = ProcessAwareResponseGenerator(  api_key=api_key ,log_dir=log_dir, milvus_uri="htp_vec_store.db")
+    responseGenerator = ProcessAwareResponseGenerator(  api_key=api_key ,log_dir=log_dir, milvus_uri="htps_vec_store.db")
 
     user_queries = ["Can you explain what happens in determine_disbursement_date_scenario","why does the employment tenure is classified as recently_hired?","Does my bussiness document 1120s meets the requirements??"]
     for user_query in user_queries:
