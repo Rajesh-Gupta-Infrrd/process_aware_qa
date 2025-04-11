@@ -165,98 +165,122 @@ class htp_vector_store:
         insert_result = self.collection.insert(entities)
         self.collection.flush()
         return insert_result
-
-    # Search    
-    def hybrid_search(self, query: str, top_k: int = 3, depth: int = None , score_boosts: Dict[str, Dict[str, float]] = None):
-
-        # Generate query embedding
+        
+    def top_down_search(self, query: str, top_k: int = 3):
         query_embedding = self.model.encode(query, normalize_embeddings=True).tolist()
-        
-        # Prepare search parameters
         search_params = {"metric_type": "COSINE", "params": {"nprobe": 16}}
-        
-        # Build filter
-        expr = None
-        if depth is not None:
-            expr = f"depth == {depth}"
-        
-        # Execute search
-        results = self.collection.search(
+
+        best_avg_score = -1.0
+        best_level = None
+        best_expr = None
+
+        # Rule level
+        expr = 'depth == 3'
+        rule_hits = self.collection.search(
             data=[query_embedding],
             anns_field="embedding",
             param=search_params,
             limit=top_k,
             expr=expr,
-            output_fields=[ "file_path","lineage", "content","depth"]
+            output_fields=["lineage", "content", "file_path"]
         )
-        
-        # Process results
-        processed = []
-        for hit in results[0]:
-            depth_val = hit.entity.get("depth")
-            # Invert depth to get level name (for score_boost)
-            level_map = {3: "rule", 2: "step", 1: "htp", 0: "subtask"}
-            level = level_map.get(depth_val, "subtask")
-            
-            score = hit.score
-            if score_boosts and "level" in score_boosts:
-                boost = score_boosts["level"].get(level, 1.0)
-                score *= boost
+        rule_scores = [hit.score for hit in rule_hits[0]]
+        if rule_scores:
+            avg_score = sum(rule_scores) / len(rule_scores)
+            if avg_score > best_avg_score:
+                best_avg_score = avg_score
+                best_level = 'rule'
+                best_expr = expr
 
-            processed.append({
-                "score": score,
+        for rule in rule_hits[0]:
+            rule_name = rule.entity.get('lineage')['rule']
+
+            # Step level
+            expr = f'depth == 2 and lineage["rule"] == "{rule_name}"'
+            step_hits = self.collection.search(
+                data=[query_embedding],
+                anns_field="embedding",
+                param=search_params,
+                limit=top_k,
+                expr=expr,
+                output_fields=[ "file_path","lineage", "content"]
+            )
+            step_scores = [hit.score for hit in step_hits[0]]
+            if step_scores:
+                avg_score = sum(step_scores) / len(step_scores)
+                if avg_score > best_avg_score:
+                    best_avg_score = avg_score
+                    best_level = 'step'
+                    best_expr = expr
+
+            for step in step_hits[0]:
+                step_name = step.entity.get('lineage')['step']
+
+                # HTP level
+                expr = (
+                    f'depth == 1 and lineage["rule"] == "{rule_name}" and '
+                    f'lineage["step"] == "{step_name}"'
+                )
+                htp_hits = self.collection.search(
+                    data=[query_embedding],
+                    anns_field="embedding",
+                    param=search_params,
+                    limit=top_k,
+                    expr=expr,
+                    output_fields=[ "file_path","lineage", "content"]
+                )
+                htp_scores = [hit.score for hit in htp_hits[0]]
+                if htp_scores:
+                    avg_score = sum(htp_scores) / len(htp_scores)
+                    if avg_score > best_avg_score:
+                        best_avg_score = avg_score
+                        best_level = 'htp'
+                        best_expr = expr
+
+                for htp in htp_hits[0]:
+                    htp_name = htp.entity.get('lineage')['htp']
+
+                    # Subtask level
+                    expr = (
+                        f'depth == 0 and lineage["rule"] == "{rule_name}" and '
+                        f'lineage["step"] == "{step_name}" and lineage["htp"] == "{htp_name}"'
+                    )
+                    subtask_hits = self.collection.search(
+                        data=[query_embedding],
+                        anns_field="embedding",
+                        param=search_params,
+                        limit=top_k,
+                        expr=expr,
+                        output_fields=[ "file_path","lineage", "content"]
+                    )
+                    subtask_scores = [hit.score for hit in subtask_hits[0]]
+                    if subtask_scores:
+                        avg_score = sum(subtask_scores) / len(subtask_scores)
+                        if avg_score > best_avg_score:
+                            best_avg_score = avg_score
+                            best_level = 'subtask'
+                            best_expr = expr
+
+        # Fetch top-k for best level
+        final_hits = self.collection.search(
+            data=[query_embedding],
+            anns_field="embedding",
+            param=search_params,
+            limit=top_k,
+            expr=best_expr,
+            output_fields=[ "file_path","lineage", "content"]
+        )
+
+        return {
+            "level": best_level,
+            "average_score": best_avg_score,
+            "top_hits": [{
+                "score": hit.score,
                 "file_path": hit.entity.get("file_path"),
                 "lineage": hit.entity.get("lineage"),
-                "content": hit.entity.get("content"),
-                "metadata": {"level": level, "depth": depth_val}
-            })
-        
-        return processed
-    
-    def get_best_context_by_level(self, query: str, top_k: int = 3):
-        # Define level weights (priority boost)
-        level_weights = {
-            "rule": 1.1,
-            "step": 1.3,
-            "htp": 1.2,
-            "subtask": 1.0
+                "content": hit.entity.get("content")
+            } for hit in final_hits[0]]
         }
-
-        # Single search with score boosting
-        raw_results = self.hybrid_search(
-            query=query,
-            top_k=top_k*4,  # Get extra results for filtering
-            score_boosts={"level": level_weights}
-        )
-
-        # Early exit if no results
-        if not raw_results:
-            print("❌ No results found at any level.")
-            return []
-
-        # Group results by level while preserving order
-        level_groups = {}
-        for result in raw_results:
-            level = result["metadata"]["level"]
-            level_groups.setdefault(level, []).append(result)
-
-        # Calculate group scores using weighted average
-        group_scores = {}
-        for level, items in level_groups.items():
-            weighted_scores = [item["score"] * level_weights[level] for item in items[:top_k]]
-            group_scores[level] = sum(weighted_scores) / len(weighted_scores)
-
-        # Find best group
-        best_level = max(group_scores, key=group_scores.get)
-        best_results = sorted(
-            level_groups[best_level],
-            key=lambda x: x["score"],
-            reverse=True
-        )[:top_k]
-
-        print(f"🏆 Best level: {best_level.upper()} | Score: {group_scores[best_level]:.3f}")
-        return best_results
-
     
     # Add new htps
     def add_htps(self,new_dir,old_dir):
@@ -282,7 +306,6 @@ htpvs=htp_vector_store(milvus_uri="htp_vec_store.db",htp_dir="./workflows")
 
 #Adding new htps
 #htpvs.add_htps("./new_workflows","./workflows")
-
 # Example queries
 print("=== Bussiness Document Validation ===")
 results = htpvs.get_best_context_by_level(

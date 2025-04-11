@@ -23,7 +23,7 @@ class ProcessAwareResponseGenerator:
         self.log_dir = log_dir
         self.llm_client = OpenAI(api_key=api_key)
         self.milvus_uri=milvus_uri
-        self.htp_store=htp_vector_store(milvus_uri=self.milvus_uri,htp_dir="./workflows",load_local=True)
+        self.htp_store=htp_vector_store(milvus_uri=self.milvus_uri,htp_dir="./workflows",load_local=False)
 
     def load_htps(self , user_query) -> Dict:
         """
@@ -33,7 +33,7 @@ class ProcessAwareResponseGenerator:
             Dict: The loaded htp details.
         """
         #self.htp_store.add_htps("./new_workflows","./workflows")
-        htp_data=self.htp_store.get_best_context_by_level(
+        htp_data=self.htp_store.top_down_search(
             user_query,
         )
         return htp_data
@@ -48,7 +48,7 @@ class ProcessAwareResponseGenerator:
         relevant_logs = []
         pattern = r"## CODE LOG ##\s*(.+)"
 
-        for item in htp_data:
+        for item in htp_data["top_hits"]:
             path = item.get("file_path", "")  # e.g., "workflow_64.json"
             print("Workflow:",path)
             match = re.search(r"workflow_(\d+)\.json", path)
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     api_key = os.environ["OPENAI_API_KEY"]  # Replace with your API key
     responseGenerator = ProcessAwareResponseGenerator(  api_key=api_key ,log_dir=log_dir, milvus_uri="htps_vec_store.db")
 
-    user_queries = ["Can you explain what happens in determine_disbursement_date_scenario","why does the employment tenure is classified as recently_hired?","Does my bussiness document 1120s meets the requirements??"]
+    user_queries = ["Why was my employment tenure classified as recently hired?","Was my Schedule C business process validated correctly?", "does the application and employment years extracted correctly?","How was my business cash flow trend calculated?","Is Schedule C self employment history requirement meet??","Why was I told that tax returns are missing even though I submitted them?","Why my application data is considered as mid year? How did that affect the process?","Can you explain what happens in determine_disbursement_date_scenario", "Did the Schedule C validation step calculate mileage and depreciation correctly?","What logic was applied in the 'htp_schedule_c_validation' for checking my business earnings?"] 
     for user_query in user_queries:
         print("\nUser Query:",user_query)
         response = responseGenerator.generate_response(user_query)
