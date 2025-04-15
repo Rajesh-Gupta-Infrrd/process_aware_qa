@@ -2,6 +2,7 @@
 import os
 import json
 import re
+import time
 from typing import List, Dict
 from openai import OpenAI
 from htp_vec_store import htp_vector_store
@@ -95,43 +96,46 @@ class ProcessAwareResponseGenerator:
                 f'depth == 0 and lineage["rule"] == "{rule_name}" and '
                 f'lineage["step"] == "{step_name}"'
             )
-            print("Step:\n",step_name)
             # Run subtask-level search using collection API
             subtask_hits = self.htp_store.hybrid_search(query=user_query, top_k=top_k, expr=expr)
             # Sort steps by score in descending order
             subtask_hits.sort(key=lambda x: x["score"], reverse=True)
+            subtask_scores = [hit["score"] for hit in subtask_hits]
+            subtask_scores.sort(reverse=True)
             selected_subtasks = []
             selected_subtasks_logs=[]
             token_sum = 0
-            for sub in subtask_hits:
-                task_name = sub["lineage"].get("task")
-                if not task_name:
-                    continue
+            if subtask_scores:
+                if subtask_scores[0]>step["score"]:
+                    for sub in subtask_hits:
+                        task_name = sub["lineage"].get("task")
+                        if not task_name:
+                            continue
 
-                task_logs = []
-                inside_block = False
+                        task_logs = []
+                        inside_block = False
 
-                for line in logs:
-                    if f"Executing Task node: {task_name}" in line:
-                        inside_block = True
-                        continue
-                    elif inside_block and "Executing Task node:" in line:
-                        break
-                    elif inside_block and "## CODE LOG ##" in line:
-                        match_log = re.search(r"## CODE LOG ##\s*(.+)", line)
-                        if match_log:
-                            task_logs.append(match_log.group(1).strip())
+                        for line in logs:
+                            if f"Executing Task node: {task_name}" in line:
+                                inside_block = True
+                                continue
+                            elif inside_block and "Executing Task node:" in line:
+                                break
+                            elif inside_block and "## CODE LOG ##" in line:
+                                match_log = re.search(r"## CODE LOG ##\s*(.+)", line)
+                                if match_log:
+                                    task_logs.append(match_log.group(1).strip())
 
-                log_text = " ".join(task_logs)
-                token_count = len(self.tokenizer.tokenize(log_text))
-                if token_count >= token_threshold:
-                    print(f"Skipped subtasks due to high token count ({token_count}")
-                    break
-                token_sum += token_count
-                selected_subtasks.append(sub)
-                selected_subtasks_logs.append({"Task":task_name,"Logs":task_logs})
-                if token_sum >= token_threshold:
-                    break
+                        log_text = " ".join(task_logs)
+                        token_count = len(self.tokenizer.tokenize(log_text))
+                        if token_count >= token_threshold:
+                            print(f"Skipped subtasks due to high token count ({token_count}")
+                            break
+                        token_sum += token_count
+                        selected_subtasks.append(sub)
+                        selected_subtasks_logs.append({"Task":task_name,"Logs":task_logs})
+                        if token_sum >= token_threshold:
+                            break
 
             if selected_subtasks and token_sum <= token_threshold:
                 for sub in selected_subtasks:
@@ -252,8 +256,18 @@ if __name__ == "__main__":
         "What logic was applied in the 'htp_schedule_c_validation' for checking my business earnings?"
     ]
 
+    total_start_time = time.time()
+
     for idx, user_query in enumerate(user_queries, start=1):
         print(f"\nQuery {idx}: {user_query}")
+        start_time = time.time()
         response = responseGenerator.generate_response(user_query)
+        end_time = time.time()
+        latency = end_time - start_time
         print("Response:", response)
+        print(f"⏱️ Latency for Query {idx}: {latency:.2f} seconds")
+
+    total_end_time = time.time()
+    total_latency = total_end_time - total_start_time
+    print(f"\n🧮 Total latency for all {len(user_queries)} queries: {total_latency:.2f} seconds")
 
